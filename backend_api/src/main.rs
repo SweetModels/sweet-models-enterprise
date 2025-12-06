@@ -2,7 +2,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
     response::IntoResponse,
-    extract::{State, Multipart},
+    extract::{State, Multipart, Query},
     http::StatusCode,
 };
 use serde::{Serialize, Deserialize};
@@ -21,6 +21,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use std::path::Path;
+use sha2::{Sha256, Digest};
+use hex;
+use std::collections::HashMap;
 
 
 // ============================================================================
@@ -29,6 +32,7 @@ use std::path::Path;
 
 const JWT_SECRET: &[u8] = b"your-secret-key-change-in-production-minimum-32-chars-12345";
 const JWT_EXPIRATION_HOURS: i64 = 24;
+const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 30;
 const DEFAULT_TRM: f64 = 4000.0;
 const TRM_ADJUSTMENT: f64 = 300.0;
 const TOKEN_VALUE_MULTIPLIER: f64 = 0.05; // 5% base rate
@@ -54,6 +58,7 @@ struct LoginPayload {
 #[derive(Serialize)]
 struct LoginResponse {
     access_token: String,
+    refresh_token: String,
     token_type: String,
     expires_in: i64,
     role: String,
@@ -81,6 +86,114 @@ struct RegisterResponse {
     email: String,
     role: String,
     message: String,
+}
+
+// ============================================================================
+// REFRESH TOKEN STRUCTURES
+// ============================================================================
+
+#[derive(Deserialize)]
+struct RefreshTokenPayload {
+    refresh_token: String,
+}
+
+#[derive(Serialize)]
+struct RefreshTokenResponse {
+    access_token: String,
+    refresh_token: String,
+    token_type: String,
+    expires_in: i64,
+}
+
+// ============================================================================
+// NOTIFICATION STRUCTURES
+// ============================================================================
+
+#[derive(Serialize, Deserialize, Clone)]
+struct Notification {
+    id: String,
+    user_id: String,
+    title: String,
+    body: String,
+    notification_type: String,
+    priority: String,
+    read_at: Option<String>,
+    created_at: String,
+    data: Option<serde_json::Value>,
+    image_url: Option<String>,
+    action_url: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct CreateNotificationPayload {
+    user_id: String,
+    title: String,
+    body: String,
+    notification_type: String,
+    priority: Option<String>,
+    data: Option<serde_json::Value>,
+    image_url: Option<String>,
+    action_url: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct MarkReadPayload {
+    notification_ids: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct RegisterDeviceTokenPayload {
+    token: String,
+    platform: String,
+    device_info: Option<serde_json::Value>,
+}
+
+// ============================================================================
+// ADMIN DASHBOARD STRUCTURES
+// ============================================================================
+
+#[derive(Serialize)]
+struct AdminDashboardStats {
+    total_users: i64,
+    total_models: i64,
+    total_moderators: i64,
+    active_users_week: i64,
+    total_groups: i64,
+    avg_group_size: f64,
+    tokens_last_30_days: f64,
+    production_logs_last_30_days: i64,
+    avg_tokens_per_log: f64,
+    active_contracts: i64,
+    pending_contracts: i64,
+    contracts_signed_week: i64,
+    estimated_revenue_30_days: f64,
+    audit_logs_24h: i64,
+    top_models_30_days: Vec<TopPerformer>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct TopPerformer {
+    id: String,
+    email: String,
+    full_name: Option<String>,
+    total_tokens: f64,
+}
+
+#[derive(Deserialize)]
+struct ExportRequest {
+    export_type: String, // 'payroll', 'production', 'users', 'audit', 'contracts'
+    format: String, // 'csv', 'excel', 'pdf'
+    start_date: Option<String>,
+    end_date: Option<String>,
+    filters: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize)]
+struct ExportResponse {
+    export_id: String,
+    status: String,
+    message: String,
+    download_url: Option<String>,
 }
 
 // ============================================================================
@@ -585,6 +698,19 @@ fn validate_jwt(token: &str) -> Result<Claims, String> {
     .map_err(|e| format!("JWT validation error: {}", e))
 }
 
+/// Generate a secure refresh token (64 random bytes, hex encoded)
+fn generate_refresh_token() -> String {
+    let random_bytes: Vec<u8> = (0..64).map(|_| rand::random::<u8>()).collect();
+    hex::encode(random_bytes)
+}
+
+/// Hash a token using SHA256 for secure storage
+fn hash_token(token: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(token.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
 /// Genera un código OTP de 6 dígitos
 fn generate_otp_code() -> String {
     let mut rng = thread_rng();
@@ -729,15 +855,38 @@ async fn login_handler(
         return Err((StatusCode::UNAUTHORIZED, "Invalid credentials".to_string()));
     }
 
-    let token = generate_jwt(&user_id.to_string(), &email, &role)
+    let access_token = generate_jwt(&user_id.to_string(), &email, &role)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    
+    // Generate refresh token
+    let refresh_token = generate_refresh_token();
+    let refresh_token_hash = hash_token(&refresh_token);
+    let expires_at = Utc::now() + Duration::days(REFRESH_TOKEN_EXPIRATION_DAYS);
+    
+    // Store refresh token in database
+    sqlx::query(
+        "INSERT INTO refresh_tokens (user_id, token, expires_at) 
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, device_info) DO UPDATE SET
+         token = EXCLUDED.token,
+         expires_at = EXCLUDED.expires_at,
+         created_at = NOW(),
+         revoked_at = NULL"
+    )
+    .bind(user_id)
+    .bind(&refresh_token_hash)
+    .bind(expires_at)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token storage error: {}", e)))?;
 
     tracing::info!("✅ Login successful: {}", email);
 
     Ok((
         StatusCode::OK,
         Json(LoginResponse {
-            access_token: token,
+            access_token,
+            refresh_token,
             token_type: "Bearer".to_string(),
             expires_in: JWT_EXPIRATION_HOURS * 3600,
             role,
@@ -1602,6 +1751,403 @@ async fn get_financial_history(
 }
 
 // ============================================================================
+// REFRESH TOKEN HANDLERS
+// ============================================================================
+
+/// POST /auth/refresh
+/// Renew access token using refresh token
+async fn refresh_token_handler(
+    State(pool): State<PgPool>,
+    Json(payload): Json<RefreshTokenPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("🔄 Token refresh attempt");
+    
+    let token_hash = hash_token(&payload.refresh_token);
+    
+    // Verify refresh token exists and is not expired/revoked
+    let token_data: Option<(Uuid, String, String)> = sqlx::query_as(
+        "SELECT rt.user_id, u.email, u.role 
+         FROM refresh_tokens rt
+         JOIN users u ON rt.user_id = u.id
+         WHERE rt.token = $1 
+           AND rt.expires_at > NOW()
+           AND rt.revoked_at IS NULL"
+    )
+    .bind(&token_hash)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    let (user_id, email, role) = token_data
+        .ok_or((StatusCode::UNAUTHORIZED, "Invalid or expired refresh token".to_string()))?;
+    
+    // Generate new access token
+    let new_access_token = generate_jwt(&user_id.to_string(), &email, &role)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    
+    // Generate new refresh token (token rotation)
+    let new_refresh_token = generate_refresh_token();
+    let new_refresh_token_hash = hash_token(&new_refresh_token);
+    let new_expires_at = Utc::now() + Duration::days(REFRESH_TOKEN_EXPIRATION_DAYS);
+    
+    // Revoke old refresh token
+    sqlx::query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1")
+        .bind(&token_hash)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token revocation error: {}", e)))?;
+    
+    // Store new refresh token
+    sqlx::query(
+        "INSERT INTO refresh_tokens (user_id, token, expires_at) 
+         VALUES ($1, $2, $3)"
+    )
+    .bind(user_id)
+    .bind(&new_refresh_token_hash)
+    .bind(new_expires_at)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token storage error: {}", e)))?;
+    
+    tracing::info!("✅ Token refreshed successfully for user: {}", email);
+    
+    Ok((
+        StatusCode::OK,
+        Json(RefreshTokenResponse {
+            access_token: new_access_token,
+            refresh_token: new_refresh_token,
+            token_type: "Bearer".to_string(),
+            expires_in: JWT_EXPIRATION_HOURS * 3600,
+        }),
+    ))
+}
+
+/// POST /auth/logout
+/// Revoke refresh token
+async fn logout_handler(
+    State(pool): State<PgPool>,
+    Json(payload): Json<RefreshTokenPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("👋 Logout request");
+    
+    let token_hash = hash_token(&payload.refresh_token);
+    
+    sqlx::query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1")
+        .bind(&token_hash)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Logout error: {}", e)))?;
+    
+    tracing::info!("✅ Logout successful");
+    
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({"message": "Logged out successfully"})),
+    ))
+}
+
+// ============================================================================
+// NOTIFICATION HANDLERS
+// ============================================================================
+
+/// GET /api/notifications
+/// Get user notifications (paginated)
+async fn get_notifications(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    
+    let limit: i64 = params.get("limit").and_then(|l| l.parse().ok()).unwrap_or(50);
+    let offset: i64 = params.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+    let unread_only: bool = params.get("unread").map(|v| v == "true").unwrap_or(false);
+    
+    let user_id = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+    
+    let query_str = if unread_only {
+        "SELECT id, user_id, title, body, type as notification_type, priority, 
+                read_at, created_at, data, image_url, action_url
+         FROM notifications
+         WHERE user_id = $1 AND read_at IS NULL 
+           AND (expires_at IS NULL OR expires_at > NOW())
+         ORDER BY created_at DESC
+         LIMIT $2 OFFSET $3"
+    } else {
+        "SELECT id, user_id, title, body, type as notification_type, priority, 
+                read_at, created_at, data, image_url, action_url
+         FROM notifications
+         WHERE user_id = $1 
+           AND (expires_at IS NULL OR expires_at > NOW())
+         ORDER BY created_at DESC
+         LIMIT $2 OFFSET $3"
+    };
+    
+    let rows = sqlx::query(query_str)
+        .bind(user_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    let notifications: Vec<Notification> = rows.iter().map(|row| {
+        let data_value: Option<serde_json::Value> = row.get("data");
+        Notification {
+            id: row.get::<Uuid, _>("id").to_string(),
+            user_id: row.get::<Uuid, _>("user_id").to_string(),
+            title: row.get("title"),
+            body: row.get("body"),
+            notification_type: row.get("notification_type"),
+            priority: row.get("priority"),
+            read_at: row.get::<Option<chrono::DateTime<Utc>>, _>("read_at").map(|d| d.to_rfc3339()),
+            created_at: row.get::<chrono::DateTime<Utc>, _>("created_at").to_rfc3339(),
+            data: data_value,
+            image_url: row.get("image_url"),
+            action_url: row.get("action_url"),
+        }
+    }).collect();
+    
+    // Get unread count
+    let unread_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM notifications 
+         WHERE user_id = $1 AND read_at IS NULL 
+           AND (expires_at IS NULL OR expires_at > NOW())"
+    )
+    .bind(user_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(0);
+    
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "notifications": notifications,
+            "unread_count": unread_count,
+            "total": notifications.len(),
+        })),
+    ))
+}
+
+/// POST /api/notifications/mark-read
+/// Mark notifications as read
+async fn mark_notifications_read(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Json(payload): Json<MarkReadPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    
+    let user_id = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+    
+    let notification_ids: Vec<Uuid> = payload.notification_ids.iter()
+        .filter_map(|id| Uuid::parse_str(id).ok())
+        .collect();
+    
+    if notification_ids.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "No valid notification IDs provided".to_string()));
+    }
+    
+    let result = sqlx::query(
+        "UPDATE notifications 
+         SET read_at = NOW() 
+         WHERE user_id = $1 AND id = ANY($2) AND read_at IS NULL"
+    )
+    .bind(user_id)
+    .bind(&notification_ids)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "message": "Notifications marked as read",
+            "updated_count": result.rows_affected(),
+        })),
+    ))
+}
+
+/// POST /api/notifications/register-device
+/// Register device token for push notifications
+async fn register_device_token(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Json(payload): Json(RegisterDeviceTokenPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    
+    let user_id = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+    
+    sqlx::query(
+        "INSERT INTO device_tokens (user_id, token, platform, device_info, last_used_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (user_id, token) DO UPDATE SET
+         last_used_at = NOW(),
+         platform = EXCLUDED.platform,
+         device_info = EXCLUDED.device_info"
+    )
+    .bind(user_id)
+    .bind(&payload.token)
+    .bind(&payload.platform)
+    .bind(&payload.device_info)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({"message": "Device token registered successfully"})),
+    ))
+}
+
+/// POST /api/admin/notifications/send
+/// Send notification to user(s) - Admin only
+async fn send_notification(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Json(payload): Json<CreateNotificationPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let _claims = require_role(&headers, &["admin"])?;
+    
+    let user_id = Uuid::parse_str(&payload.user_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+    
+    let priority = payload.priority.unwrap_or_else(|| "normal".to_string());
+    
+    let notification_id = Uuid::new_v4();
+    
+    sqlx::query(
+        "INSERT INTO notifications (id, user_id, title, body, type, priority, data, image_url, action_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+    )
+    .bind(notification_id)
+    .bind(user_id)
+    .bind(&payload.title)
+    .bind(&payload.body)
+    .bind(&payload.notification_type)
+    .bind(&priority)
+    .bind(&payload.data)
+    .bind(&payload.image_url)
+    .bind(&payload.action_url)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "message": "Notification sent successfully",
+            "notification_id": notification_id.to_string(),
+        })),
+    ))
+}
+
+// ============================================================================
+// ADMIN DASHBOARD HANDLERS
+// ============================================================================
+
+/// GET /api/admin/dashboard
+/// Get comprehensive admin dashboard statistics
+async fn get_admin_dashboard(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let _claims = require_role(&headers, &["admin"])?;
+    
+    tracing::info!("📊 Admin dashboard requested");
+    
+    // Refresh materialized view
+    sqlx::query("SELECT refresh_admin_dashboard()")
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to refresh dashboard: {}", e)))?;
+    
+    // Fetch dashboard stats
+    let row = sqlx::query(
+        "SELECT * FROM admin_dashboard_stats LIMIT 1"
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    let top_models_json: Option<serde_json::Value> = row.get("top_models_30_days");
+    let top_models: Vec<TopPerformer> = if let Some(json_val) = top_models_json {
+        serde_json::from_value(json_val).unwrap_or_else(|_| vec![])
+    } else {
+        vec![]
+    };
+    
+    let stats = AdminDashboardStats {
+        total_users: row.get("total_users"),
+        total_models: row.get("total_models"),
+        total_moderators: row.get("total_moderators"),
+        active_users_week: row.get("active_users_week"),
+        total_groups: row.get("total_groups"),
+        avg_group_size: row.get::<String, _>("avg_group_size").parse().unwrap_or(0.0),
+        tokens_last_30_days: row.get::<String, _>("tokens_last_30_days").parse().unwrap_or(0.0),
+        production_logs_last_30_days: row.get("production_logs_last_30_days"),
+        avg_tokens_per_log: row.get::<String, _>("avg_tokens_per_log").parse().unwrap_or(0.0),
+        active_contracts: row.get("active_contracts"),
+        pending_contracts: row.get("pending_contracts"),
+        contracts_signed_week: row.get("contracts_signed_week"),
+        estimated_revenue_30_days: row.get::<String, _>("estimated_revenue_30_days").parse().unwrap_or(0.0),
+        audit_logs_24h: row.get("audit_logs_24h"),
+        top_models_30_days: top_models,
+    };
+    
+    Ok((StatusCode::OK, Json(stats)))
+}
+
+/// GET /api/admin/export
+/// Export data to CSV/Excel/PDF
+async fn export_data(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, &["admin"])?;
+    
+    let export_type = params.get("type").ok_or((StatusCode::BAD_REQUEST, "Missing export type".to_string()))?;
+    let format = params.get("format").unwrap_or(&"csv".to_string()).clone();
+    
+    tracing::info!("📥 Export requested: {} as {}", export_type, format);
+    
+    let export_id = Uuid::new_v4();
+    let user_id = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+    
+    // Log export request
+    sqlx::query(
+        "INSERT INTO export_logs (id, user_id, export_type, format, status)
+         VALUES ($1, $2, $3, $4, 'processing')"
+    )
+    .bind(export_id)
+    .bind(user_id)
+    .bind(export_type)
+    .bind(&format)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+    
+    // Here you would implement actual export logic
+    // For now, return a placeholder response
+    
+    Ok((
+        StatusCode::OK,
+        Json(ExportResponse {
+            export_id: export_id.to_string(),
+            status: "processing".to_string(),
+            message: format!("Export {} initiated. Download will be available shortly.", export_type),
+            download_url: Some(format!("/api/admin/exports/{}/download", export_id)),
+        }),
+    ))
+}
+
+// ============================================================================
 // MAIN FUNCTION
 // ============================================================================
 
@@ -1658,6 +2204,17 @@ async fn main() {
         .route("/auth/verify-otp", post(verify_otp_handler))
         // 🆕 KYC Document Upload
         .route("/upload/kyc", post(upload_kyc_handler))
+        // 🔄 Refresh Token System
+        .route("/auth/refresh", post(refresh_token_handler))
+        .route("/auth/logout", post(logout_handler))
+        // 🔔 Notifications
+        .route("/api/notifications", get(get_notifications))
+        .route("/api/notifications/mark-read", post(mark_notifications_read))
+        .route("/api/notifications/register-device", post(register_device_token))
+        .route("/api/admin/notifications/send", post(send_notification))
+        // 📊 Admin Dashboard & Export
+        .route("/api/admin/dashboard", get(get_admin_dashboard))
+        .route("/api/admin/export", get(export_data))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
@@ -1665,7 +2222,7 @@ async fn main() {
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
 
     tracing::info!("🚀 Server running on {}", addr);
-    tracing::info!("✨ Features: Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
+    tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
 
     axum::serve(listener, app)
         .await

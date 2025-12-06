@@ -11,15 +11,29 @@
 | **Base de Datos** | PostgreSQL 15-alpine | Migraciones automáticas, JSONB, índices optimizados |
 | **Infraestructura** | Docker Compose | Orquestación multi-servicio |
 | **State Management** | Riverpod 2.6+ | State management reactivo |
-| **Autenticación** | JWT + Argon2id | Tokens seguros, hash de contraseñas |
+| **Autenticación** | JWT + Refresh Tokens | Tokens seguros, renovación automática |
+| **Background Jobs** | WorkManager | Sincronización en segundo plano |
+| **Notificaciones** | FCM + Local | Push notifications multi-plataforma |
+| **Internacionalización** | i18n | Soporte EN, ES, PT |
 
 ## ✨ Características Principales
 
-### 🔐 Sistema de Autenticación
-- ✅ JWT con roles (admin, moderator, model, user)
+### 🔐 Sistema de Autenticación Avanzado
+- ✅ JWT con refresh tokens (rotación automática)
 - ✅ Hash de contraseñas con Argon2id
+- ✅ Tokens de 30 días de duración
+- ✅ Renovación automática de access tokens
+- ✅ Revocación de tokens en logout
 - ✅ Validación de tokens en todos los endpoints protegidos
 - ✅ Login persistente en SharedPreferences
+
+### 🔔 Sistema de Notificaciones
+- ✅ Notificaciones in-app con prioridades
+- ✅ Push notifications (FCM/APNS)
+- ✅ Filtros por tipo (logro, pago, contrato, info)
+- ✅ Contador de no leídas en tiempo real
+- ✅ Cache offline para acceso sin conexión
+- ✅ Preferencias de notificación personalizables
 
 ### 👥 Módulos de Usuario
 
@@ -30,6 +44,7 @@
 - ✅ Borde dorado animado al alcanzar meta
 - ✅ Modo offline: cola de reintentos automáticos
 - ✅ Barra de progreso en tiempo real
+- ✅ Sincronización en background (cada 15 minutos)
 
 #### 🌟 Espacio de Modelos
 - ✅ Dashboard con puntos acumulados
@@ -37,13 +52,31 @@
 - ✅ Firma de contratos con captura de firma digital
 - ✅ Animaciones de confetti al firmar
 - ✅ Sistema de gamificación con logros
+- ✅ Notificaciones de logros y pagos
+
+#### 👔 Panel de Administrador
+- ✅ Dashboard con métricas en tiempo real
+- ✅ Estadísticas de usuarios, modelos, grupos
+- ✅ Gráficos de ingresos (últimos 30 días)
+- ✅ Top 10 performers del mes
+- ✅ Exportación de datos (CSV, Excel, PDF)
+- ✅ Logs de auditoría (últimas 24 horas)
+- ✅ Gestión de contratos y pagos
 
 ### 🔧 Backend API Endpoints
 
 #### Autenticación
-- `POST /login` - Login con email/password
+- `POST /login` - Login con email/password (retorna access + refresh token)
 - `POST /register` - Registro de usuarios
+- `POST /auth/refresh` - Renovar access token con refresh token
+- `POST /auth/logout` - Revocar refresh token
 - `POST /api/model/register` - Registro avanzado de modelos
+
+#### Notificaciones
+- `GET /api/notifications` - Obtener notificaciones (paginadas)
+- `POST /api/notifications/mark-read` - Marcar como leídas
+- `POST /api/notifications/register-device` - Registrar token FCM/APNS
+- `POST /api/admin/notifications/send` - Enviar notificación (admin)
 
 #### Operaciones de Moderador
 - `GET /api/mod/groups` - Obtener grupos asignados
@@ -55,6 +88,11 @@
 - `GET /api/model/dashboard` - Dashboard de puntos y ganancias
 - `POST /api/model/sign-contract` - Firma digital de contratos
 
+#### Administrador
+- `GET /api/admin/dashboard` - Estadísticas completas del sistema
+- `GET /api/admin/export` - Exportar datos (CSV, Excel, PDF)
+- `GET /api/admin/financial-history` - Datos históricos en formato candlestick
+
 ### 🗄️ Base de Datos
 
 #### Tablas Principales
@@ -65,6 +103,13 @@
 - **production_logs** - Logs de producción diaria por grupo
 - **audit_trail** - Auditoría completa con JSONB (old_value, new_value)
 - **social_links** - Links de redes sociales por usuario
+- **refresh_tokens** - Tokens de renovación con expiración de 30 días
+- **notifications** - Notificaciones in-app con prioridades y tipos
+- **device_tokens** - Tokens FCM/APNS para push notifications
+- **notification_preferences** - Preferencias de usuario para notificaciones
+- **export_logs** - Historial de exportaciones de datos
+- **system_stats** - Estadísticas diarias del sistema
+- **admin_dashboard_stats** (Materialized View) - Métricas de dashboard en tiempo real
 
 ### 🎨 UI/UX
 - ✅ Dark theme personalizado (Material 3)

@@ -78,6 +78,27 @@ dependencies:
   media_kit: ^1.2.3
   media_kit_video: ^1.2.3
   
+  # Background services
+  workmanager: ^0.5.2
+  
+  # Push notifications
+  firebase_core: ^3.11.0
+  firebase_messaging: ^15.5.2
+  flutter_local_notifications: ^17.0.0
+  
+  # Export functionality
+  csv: ^6.0.0
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  pdf: ^3.11.0
+  
+  # Internationalization
+  flutter_localizations:
+    sdk: flutter
+  
+  # Charts for admin dashboard
+  fl_chart: ^0.69.0
+  
   # Image processing
   image: ^4.3.0
   
