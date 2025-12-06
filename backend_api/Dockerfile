@@ -1,40 +1,51 @@
-# Build stage with latest Alpine edge for security patches
-FROM rust:alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+# ============================================
+# ETAPA 1: BUILDER - Compilación con Rust
+# ============================================
+FROM rust:latest AS builder
 
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml ./
-COPY Cargo.lock ./
+# Copiar manifiestos para cachear dependencias
+COPY Cargo.toml Cargo.lock ./
 
-# Create dummy source for dependency caching
-RUN mkdir -p src && echo "fn main(){}" > src/main.rs
+# Crear estructura dummy para cachear dependencias
+RUN mkdir src && \
+    echo "fn main() {println!(\"dummy\");}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
-# Pre-compile dependencies only
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    cargo build --release 2>&1 | head -100 || true
-
-# Copy real source code
+# Copiar código real y migraciones
 COPY src ./src
 COPY migrations ./migrations
 
-# Build actual application with static linking
+# Compilar aplicación en modo release (optimizado)
 RUN cargo build --release
 
-# Runtime stage with minimal distroless image (no vulnerabilities)
-FROM gcr.io/distroless/cc-debian12:nonroot
+# ============================================
+# ETAPA 2: RUNNER - Imagen final ultraligera
+# ============================================
+FROM debian:bullseye-slim
 
 WORKDIR /app
 
-# Copy binary from builder
+# Instalar dependencias mínimas necesarias
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar solo el binario compilado desde builder
 COPY --from=builder /app/target/release/backend_api /app/backend_api
 
-EXPOSE 3000
+# Copiar migraciones (necesarias en runtime)
+COPY --from=builder /app/migrations /app/migrations
 
+# Railway asigna PORT dinámicamente, usar variable de entorno
+ENV PORT=3000
 ENV RUST_LOG=info
 
+EXPOSE ${PORT}
+
+# Ejecutar aplicación
 CMD ["/app/backend_api"]
