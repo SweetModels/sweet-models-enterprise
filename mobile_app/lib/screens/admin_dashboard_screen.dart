@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'model_profile_screen.dart';
 
 /// Admin Dashboard Statistics Model
 class AdminStats {
@@ -387,6 +388,16 @@ class AdminDashboardScreen extends ConsumerWidget {
                     color: Colors.teal,
                   ),
                 ),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ModelProfileScreen(
+                        userId: performer.id,
+                        userName: performer.fullName ?? performer.email,
+                      ),
+                    ),
+                  );
+                },
               );
             }),
           ],

@@ -197,6 +197,66 @@ struct ExportResponse {
 }
 
 // ============================================================================
+// PAYOUT STRUCTURES (NEW)
+// ============================================================================
+
+#[derive(Deserialize)]
+struct PayoutRequest {
+    user_id: String,
+    amount: f64,
+    method: String, // Ej: Binance, Bancolombia, Efectivo
+    reference_id: Option<String>,
+    notes: Option<String>,
+}
+
+#[derive(Serialize)]
+struct PayoutResponse {
+    payout_id: String,
+    user_id: String,
+    amount: f64,
+    method: String,
+    reference_id: Option<String>,
+    new_pending_balance: f64,
+    message: String,
+    created_at: String,
+}
+
+#[derive(Serialize)]
+struct PayoutHistoryResponse {
+    payouts: Vec<PayoutRecord>,
+    total_paid: f64,
+    total_count: i64,
+}
+
+#[derive(Serialize)]
+struct PayoutRecord {
+    id: String,
+    amount: f64,
+    method: String,
+    reference_id: Option<String>,
+    notes: Option<String>,
+    created_at: String,
+    processed_by_email: Option<String>,
+}
+
+#[derive(Serialize)]
+struct BalanceInfo {
+    total_earned: f64,
+    total_paid: f64,
+    pending_balance: f64,
+}
+
+#[derive(Serialize)]
+struct UserBalanceResponse {
+    user_id: String,
+    email: String,
+    total_earned: f64,
+    total_paid: f64,
+    pending_balance: f64,
+    last_payout_date: Option<String>,
+}
+
+// ============================================================================
 // FINANCIAL STRUCTURES
 // ============================================================================
 
@@ -577,6 +637,32 @@ fn require_role(headers: &axum::http::HeaderMap, expected_role: &str) -> Result<
     Ok(claims)
 }
 
+/// Helper to validate multiple roles at once
+fn require_roles(headers: &axum::http::HeaderMap, allowed_roles: &[&str]) -> Result<Claims, (StatusCode, String)> {
+    let auth_header = headers
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .ok_or((StatusCode::UNAUTHORIZED, "Missing authorization header".to_string()))?;
+
+    let token = auth_header
+        .strip_prefix("Bearer ")
+        .ok_or((StatusCode::UNAUTHORIZED, "Invalid authorization format".to_string()))?;
+
+    let claims = decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(JWT_SECRET),
+        &Validation::default(),
+    )
+    .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid token".to_string()))?
+    .claims;
+
+    if !allowed_roles.contains(&claims.role.as_str()) {
+        return Err((StatusCode::FORBIDDEN, "Insufficient permissions".to_string()));
+    }
+
+    Ok(claims)
+}
+
 async fn current_trm(pool: &PgPool) -> f64 {
     let trm_result: Option<(String,)> = sqlx::query_as(
         "SELECT config_value FROM financial_config WHERE config_key = 'trm_daily'"
@@ -589,6 +675,35 @@ async fn current_trm(pool: &PgPool) -> f64 {
     trm_result
         .and_then(|(v,)| v.parse::<f64>().ok())
         .unwrap_or(DEFAULT_TRM)
+}
+
+/// Calcula balance financiero del usuario (ganado - pagado)
+async fn calculate_user_balance(pool: &PgPool, user_uuid: Uuid) -> Result<BalanceInfo, (StatusCode, String)> {
+    // Ganancias históricas (asumimos columna tokens_usd en production_logs)
+    let total_earned: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(tokens_usd), 0)::float8 FROM production_logs WHERE model_id = $1"
+    )
+    .bind(user_uuid)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(0.0);
+
+    // Pagos efectuados
+    let total_paid: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(amount), 0)::float8 FROM payouts WHERE user_id = $1"
+    )
+    .bind(user_uuid)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(0.0);
+
+    let pending_balance = (total_earned - total_paid).max(0.0);
+
+    Ok(BalanceInfo {
+        total_earned,
+        total_paid,
+        pending_balance,
+    })
 }
 
 async fn sum_points_since(
@@ -1857,7 +1972,7 @@ async fn get_notifications(
     headers: axum::http::HeaderMap,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    let claims = require_roles(&headers, &["admin", "moderator", "model", "user"])?;
     
     let limit: i64 = params.get("limit").and_then(|l| l.parse().ok()).unwrap_or(50);
     let offset: i64 = params.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
@@ -1937,7 +2052,7 @@ async fn mark_notifications_read(
     headers: axum::http::HeaderMap,
     Json(payload): Json<MarkReadPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    let claims = require_roles(&headers, &["admin", "moderator", "model", "user"])?;
     
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
@@ -1975,9 +2090,9 @@ async fn mark_notifications_read(
 async fn register_device_token(
     State(pool): State<PgPool>,
     headers: axum::http::HeaderMap,
-    Json(payload): Json(RegisterDeviceTokenPayload>,
+    Json(payload): Json<RegisterDeviceTokenPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let claims = require_role(&headers, &["admin", "moderator", "model", "user"])?;
+    let claims = require_roles(&headers, &["admin", "moderator", "model", "user"])?;
     
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
@@ -2011,7 +2126,7 @@ async fn send_notification(
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateNotificationPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let _claims = require_role(&headers, &["admin"])?;
+    let _claims = require_roles(&headers, &["admin"])?;
     
     let user_id = Uuid::parse_str(&payload.user_id)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
@@ -2056,7 +2171,7 @@ async fn get_admin_dashboard(
     State(pool): State<PgPool>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let _claims = require_role(&headers, &["admin"])?;
+    let _claims = require_roles(&headers, &["admin"])?;
     
     tracing::info!("📊 Admin dashboard requested");
     
@@ -2109,7 +2224,7 @@ async fn export_data(
     headers: axum::http::HeaderMap,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let claims = require_role(&headers, &["admin"])?;
+    let claims = require_roles(&headers, &["admin"])?;
     
     let export_type = params.get("type").ok_or((StatusCode::BAD_REQUEST, "Missing export type".to_string()))?;
     let format = params.get("format").unwrap_or(&"csv".to_string()).clone();
@@ -2143,6 +2258,258 @@ async fn export_data(
             status: "processing".to_string(),
             message: format!("Export {} initiated. Download will be available shortly.", export_type),
             download_url: Some(format!("/api/admin/exports/{}/download", export_id)),
+        }),
+    ))
+}
+
+// ============================================================================
+// PAYOUT / LIQUIDATION HANDLERS (NEW)
+// ============================================================================
+
+/// Generate simple PDF receipt for payout
+async fn generate_payout_receipt(
+    user_email: &str,
+    amount: f64,
+    method: &str,
+    transaction_ref: &Option<String>,
+    payout_id: &Uuid,
+) -> Result<String, String> {
+    use pdf_lib::*;
+    
+    let filename = format!("receipt_{}.pdf", payout_id);
+    let filepath = format!("./uploads/receipts/{}", filename);
+    
+    // Ensure receipts directory exists
+    std::fs::create_dir_all("./uploads/receipts")
+        .map_err(|e| format!("Failed to create receipts directory: {}", e))?;
+    
+    let (doc, page1, layer1) = PdfDocument::new("Payout Receipt", Mm(210.0), Mm(297.0), "Layer 1");
+    let current_layer = doc.get_page(page1).get_layer(layer1);
+    
+    // Add title
+    let font = doc.add_builtin_font(BuiltinFont::Helvetica).map_err(|e| format!("Font error: {}", e))?;
+    let font_bold = doc.add_builtin_font(BuiltinFont::HelveticaBold).map_err(|e| format!("Font error: {}", e))?;
+    
+    current_layer.use_text("SWEET MODELS ENTERPRISE", 24.0, Mm(50.0), Mm(270.0), &font_bold);
+    current_layer.use_text("Payment Receipt", 18.0, Mm(70.0), Mm(255.0), &font);
+    
+    // Add details
+    let mut y_pos = 230.0;
+    current_layer.use_text(&format!("Receipt ID: {}", payout_id), 12.0, Mm(30.0), Mm(y_pos), &font);
+    
+    y_pos -= 10.0;
+    current_layer.use_text(&format!("Date: {}", chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")), 12.0, Mm(30.0), Mm(y_pos), &font);
+    
+    y_pos -= 10.0;
+    current_layer.use_text(&format!("Recipient: {}", user_email), 12.0, Mm(30.0), Mm(y_pos), &font);
+    
+    y_pos -= 15.0;
+    current_layer.use_text(&format!("Amount: ${:.2} USD", amount), 14.0, Mm(30.0), Mm(y_pos), &font_bold);
+    
+    y_pos -= 10.0;
+    current_layer.use_text(&format!("Payment Method: {}", method.to_uppercase()), 12.0, Mm(30.0), Mm(y_pos), &font);
+    
+    if let Some(ref tx_ref) = transaction_ref {
+        y_pos -= 10.0;
+        current_layer.use_text(&format!("Transaction Reference: {}", tx_ref), 12.0, Mm(30.0), Mm(y_pos), &font);
+    }
+    
+    y_pos -= 20.0;
+    current_layer.use_text("This receipt confirms the payout has been processed.", 10.0, Mm(30.0), Mm(y_pos), &font);
+    y_pos -= 5.0;
+    current_layer.use_text("Please keep this document for your records.", 10.0, Mm(30.0), Mm(y_pos), &font);
+    
+    // Footer
+    current_layer.use_text("Sweet Models Enterprise - Financial Department", 8.0, Mm(60.0), Mm(20.0), &font);
+    current_layer.use_text("www.sweetmodels.com", 8.0, Mm(75.0), Mm(15.0), &font);
+    
+    // Save PDF
+    doc.save(&mut std::io::BufWriter::new(
+        std::fs::File::create(&filepath).map_err(|e| format!("Failed to create PDF file: {}", e))?
+    )).map_err(|e| format!("Failed to save PDF: {}", e))?;
+    
+    tracing::info!("📄 PDF receipt generated: {}", filepath);
+    
+    Ok(format!("/uploads/receipts/{}", filename))
+}
+
+/// POST /api/admin/payout
+/// Registra un pago y devuelve saldo pendiente actualizado
+async fn process_payout(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    Json(payload): Json<PayoutRequest>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_roles(&headers, &["admin"])?;
+
+    tracing::info!("💸 Payout request: user={}, amount=${}, method={}", payload.user_id, payload.amount, payload.method);
+
+    if payload.amount <= 0.0 {
+        return Err((StatusCode::BAD_REQUEST, "Amount must be greater than 0".to_string()));
+    }
+
+    // Métodos permitidos (libre texto, pero validamos no vacío)
+    if payload.method.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "method is required".to_string()));
+    }
+
+    let user_uuid = Uuid::parse_str(&payload.user_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user_id format".to_string()))?;
+
+    let admin_uuid = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid admin ID".to_string()))?;
+
+    // Obtener balance actual (ganado - pagado)
+    let balance = calculate_user_balance(&pool, user_uuid).await?;
+
+    if payload.amount > balance.pending_balance {
+        return Err((StatusCode::BAD_REQUEST, format!(
+            "Amount exceeds pending balance. Pending: ${:.2}, Requested: ${:.2}",
+            balance.pending_balance, payload.amount
+        )));
+    }
+
+    // Insertar payout
+    let payout_id = Uuid::new_v4();
+
+    sqlx::query(
+        r#"
+        INSERT INTO payouts (id, user_id, amount, method, reference_id, notes, processed_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        "#
+    )
+    .bind(payout_id)
+    .bind(user_uuid)
+    .bind(payload.amount)
+    .bind(&payload.method)
+    .bind(&payload.reference_id)
+    .bind(&payload.notes)
+    .bind(admin_uuid)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert payout: {}", e)))?;
+
+    // Nuevo saldo (recalcular por consistencia)
+    let updated_balance = calculate_user_balance(&pool, user_uuid).await?;
+
+    tracing::info!(
+        "✅ Payout recorded: payout_id={}, new_pending=${:.2}",
+        payout_id, updated_balance.pending_balance
+    );
+
+    Ok((
+        StatusCode::CREATED,
+        Json(PayoutResponse {
+            payout_id: payout_id.to_string(),
+            user_id: payload.user_id,
+            amount: payload.amount,
+            method: payload.method,
+            reference_id: payload.reference_id,
+            new_pending_balance: updated_balance.pending_balance,
+            message: "Payout registered successfully".to_string(),
+            created_at: chrono::Utc::now().to_rfc3339(),
+        }),
+    ))
+}
+
+/// GET /api/admin/payouts/{user_id}
+/// Historial de pagos para un usuario
+async fn get_payout_history_handler(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    axum::extract::Path(user_id): axum::extract::Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let _claims = require_roles(&headers, &["admin"])?;
+
+    let user_uuid = Uuid::parse_str(&user_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user_id format".to_string()))?;
+
+    let payouts: Vec<(String, f64, String, Option<String>, Option<String>, String, Option<String>)> = sqlx::query_as(
+        r#"
+        SELECT 
+            p.id::text,
+            p.amount::float8,
+            p.method,
+            p.reference_id,
+            p.notes,
+            p.created_at::text,
+            u.email as processed_by_email
+        FROM payouts p
+        LEFT JOIN users u ON p.processed_by = u.id
+        WHERE p.user_id = $1
+        ORDER BY p.created_at DESC
+        "#
+    )
+    .bind(user_uuid)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+
+    let payout_records: Vec<PayoutRecord> = payouts
+        .into_iter()
+        .map(|(id, amount, method, reference_id, notes, created_at, processed_by_email)| PayoutRecord {
+            id,
+            amount,
+            method,
+            reference_id,
+            notes,
+            created_at,
+            processed_by_email,
+        })
+        .collect();
+
+    let total_paid: f64 = payout_records.iter().map(|p| p.amount).sum();
+    let total_count = payout_records.len() as i64;
+
+    Ok((
+        StatusCode::OK,
+        Json(PayoutHistoryResponse {
+            payouts: payout_records,
+            total_paid,
+            total_count,
+        }),
+    ))
+}
+
+/// GET /api/admin/user-balance/:user_id
+/// Get user balance details
+async fn get_user_balance_handler(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+    axum::extract::Path(user_id): axum::extract::Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let _claims = require_roles(&headers, &["admin"])?;
+
+    let user_uuid = Uuid::parse_str(&user_id)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user_id format".to_string()))?;
+
+    let email: Option<String> = sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
+        .bind(user_uuid)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
+
+    let email = email.ok_or((StatusCode::NOT_FOUND, "User not found".to_string()))?;
+
+    let balance = calculate_user_balance(&pool, user_uuid).await?;
+
+    let last_payout: Option<String> = sqlx::query_scalar(
+        "SELECT created_at::text FROM payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
+    )
+    .bind(user_uuid)
+    .fetch_optional(&pool)
+    .await
+    .unwrap_or(None);
+
+    Ok((
+        StatusCode::OK,
+        Json(UserBalanceResponse {
+            user_id,
+            email,
+            total_earned: balance.total_earned,
+            total_paid: balance.total_paid,
+            pending_balance: balance.pending_balance,
+            last_payout_date: last_payout,
         }),
     ))
 }
@@ -2215,6 +2582,10 @@ async fn main() {
         // 📊 Admin Dashboard & Export
         .route("/api/admin/dashboard", get(get_admin_dashboard))
         .route("/api/admin/export", get(export_data))
+            // 💰 Payout / Liquidation System (NEW)
+            .route("/api/admin/payout", post(process_payout))
+            .route("/api/admin/payouts/:user_id", get(get_payout_history_handler))
+            .route("/api/admin/user-balance/:user_id", get(get_user_balance_handler))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
@@ -2222,7 +2593,7 @@ async fn main() {
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
 
     tracing::info!("🚀 Server running on {}", addr);
-    tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
+    tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Payouts/Liquidation, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
 
     axum::serve(listener, app)
         .await

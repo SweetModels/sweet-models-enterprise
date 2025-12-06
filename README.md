@@ -19,6 +19,7 @@
 ## ✨ Características Principales
 
 ### 🔐 Sistema de Autenticación Avanzado
+
 - ✅ JWT con refresh tokens (rotación automática)
 - ✅ Hash de contraseñas con Argon2id
 - ✅ Tokens de 30 días de duración
@@ -28,6 +29,7 @@
 - ✅ Login persistente en SharedPreferences
 
 ### 🔔 Sistema de Notificaciones
+
 - ✅ Notificaciones in-app con prioridades
 - ✅ Push notifications (FCM/APNS)
 - ✅ Filtros por tipo (logro, pago, contrato, info)
@@ -38,6 +40,7 @@
 ### 👥 Módulos de Usuario
 
 #### 📊 Consola de Moderadores
+
 - ✅ Dashboard de grupos asignados
 - ✅ Registro de producción diaria (tokens)
 - ✅ Gamificación: Meta de 10,000 tokens/día con feedback visual
@@ -47,6 +50,7 @@
 - ✅ Sincronización en background (cada 15 minutos)
 
 #### 🌟 Espacio de Modelos
+
 - ✅ Dashboard con puntos acumulados
 - ✅ Desglose de ganancias (hoy, semana, mes) en COP
 - ✅ Firma de contratos con captura de firma digital
@@ -55,6 +59,7 @@
 - ✅ Notificaciones de logros y pagos
 
 #### 👔 Panel de Administrador
+
 - ✅ Dashboard con métricas en tiempo real
 - ✅ Estadísticas de usuarios, modelos, grupos
 - ✅ Gráficos de ingresos (últimos 30 días)
@@ -66,6 +71,7 @@
 ### 🔧 Backend API Endpoints
 
 #### Autenticación
+
 - `POST /login` - Login con email/password (retorna access + refresh token)
 - `POST /register` - Registro de usuarios
 - `POST /auth/refresh` - Renovar access token con refresh token
@@ -73,22 +79,26 @@
 - `POST /api/model/register` - Registro avanzado de modelos
 
 #### Notificaciones
+
 - `GET /api/notifications` - Obtener notificaciones (paginadas)
 - `POST /api/notifications/mark-read` - Marcar como leídas
 - `POST /api/notifications/register-device` - Registrar token FCM/APNS
 - `POST /api/admin/notifications/send` - Enviar notificación (admin)
 
 #### Operaciones de Moderador
+
 - `GET /api/mod/groups` - Obtener grupos asignados
 - `POST /api/mod/production` - Registrar producción diaria
 - Auto-generación de audit trail en cada registro
 - Detección automática de metas diarias
 
 #### Modelos
+
 - `GET /api/model/dashboard` - Dashboard de puntos y ganancias
 - `POST /api/model/sign-contract` - Firma digital de contratos
 
 #### Administrador
+
 - `GET /api/admin/dashboard` - Estadísticas completas del sistema
 - `GET /api/admin/export` - Exportar datos (CSV, Excel, PDF)
 - `GET /api/admin/financial-history` - Datos históricos en formato candlestick
@@ -96,6 +106,7 @@
 ### 🗄️ Base de Datos
 
 #### Tablas Principales
+
 - **users** - Usuarios con roles, KYC, verificación biométrica
 - **groups** - Grupos de trabajo con plataforma, tokens, miembros
 - **points_ledger** - Ledger de puntos con razón y timestamps
@@ -112,6 +123,7 @@
 - **admin_dashboard_stats** (Materialized View) - Métricas de dashboard en tiempo real
 
 ### 🎨 UI/UX
+
 - ✅ Dark theme personalizado (Material 3)
 - ✅ Google Fonts (Inter)
 - ✅ Animaciones fluidas (confetti, shimmer, bordes brillantes)
@@ -138,18 +150,21 @@ cd sweet_models_enterprise
 ### Opción 2: Manual
 
 **Terminal 1 - Docker:**
+
 ```bash
 cd docker
 docker-compose up
 ```
 
 **Terminal 2 - Backend:**
+
 ```bash
 cd backend_api
 cargo run
 ```
 
 **Terminal 3 - Frontend:**
+
 ```bash
 cd mobile_app
 flutter run
@@ -175,7 +190,7 @@ open http://localhost:8081
 
 ## 📁 Estructura del Proyecto
 
-```
+```text
 sweet_models_enterprise/
 ├── docker/                    # Orquestación Docker
 │   └── docker-compose.yml
@@ -199,7 +214,8 @@ sweet_models_enterprise/
 | `GET` | `/health` | Health check |
 | `POST` | `/setup_admin` | Crear usuario admin (pruebas) |
 
-### Próximos endpoints:
+### Próximos endpoints
+
 - `POST /auth/login` - Autenticación
 - `POST /auth/register` - Registro de usuarios
 - `GET /api/users` - Listar usuarios (admin)
@@ -208,6 +224,7 @@ sweet_models_enterprise/
 ## 🔐 Credenciales
 
 ### Base de Datos
+
 - **Host**: localhost
 - **Puerto**: 5432
 - **Usuario**: `sme_user`
@@ -215,7 +232,8 @@ sweet_models_enterprise/
 - **Base de datos**: `sme_db`
 
 ### Adminer UI
-- **URL**: http://localhost:8081
+
+- **URL**: <http://localhost:8081>
 - **Usuario**: admin
 - **Contraseña**: admin
 
@@ -267,16 +285,19 @@ cargo build
 ## 📱 Requisitos de Desarrollo
 
 ### Rust Backend
+
 - Rust 1.48.0+
 - Cargo
 
 ### Flutter Frontend
+
 - Flutter 3.24.5 (stable)
 - Dart 3.5.4+
 - iOS Xcode (para Mac)
 - Android Studio + SDK (para Android)
 
 ### Infraestructura
+
 - Docker 25.0.3+
 - Docker Compose 2.20+
 
@@ -314,6 +335,7 @@ flutter devices
 Cuando hagas cambios:
 
 1. **Backend (Rust)**:
+
    ```bash
    cargo fmt          # Formatea código
    cargo clippy       # Linter
@@ -322,6 +344,7 @@ Cuando hagas cambios:
    ```
 
 2. **Frontend (Flutter)**:
+
    ```bash
    flutter format .   # Formatea código
    flutter analyze    # Análisis estático

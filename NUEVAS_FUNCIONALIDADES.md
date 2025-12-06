@@ -8,7 +8,8 @@
 
 ## 1. 🔄 Sistema de Refresh Tokens
 
-### Backend (Rust)
+### Backend Rust - Sistema Refresh
+
 - **Nueva tabla:** `refresh_tokens`
   - Almacena tokens con hash SHA256
   - Expiración de 30 días
@@ -23,7 +24,8 @@
   - Validación de expiración y revocación
   - Cleanup automático de tokens expirados
 
-### Flutter
+### Flutter - Sistema Refresh
+
 - **Servicio:** `token_service.dart`
   - Almacenamiento seguro en SharedPreferences
   - Verificación automática de expiración (5 minutos antes)
@@ -38,7 +40,8 @@
 
 ## 2. 🔔 Sistema de Notificaciones
 
-### Backend (Rust)
+### Backend Rust - Notificaciones
+
 - **Tablas creadas:**
   - `notifications` - Notificaciones in-app
   - `notification_preferences` - Preferencias del usuario
@@ -56,7 +59,8 @@
   - Deep linking con `action_url`
   - Cleanup automático (30 días)
 
-### Flutter
+### Flutter - Notificaciones
+
 - **Servicio:** `notification_service.dart`
   - Fetch paginado de notificaciones
   - Contador de no leídas en tiempo real
@@ -72,7 +76,8 @@
 
 ## 3. 👔 Dashboard de Administrador
 
-### Backend (Rust)
+### Backend Rust - Dashboard
+
 - **Tabla:** `system_stats` - Estadísticas diarias
 - **Materialized View:** `admin_dashboard_stats` - Métricas en tiempo real
 - **Endpoint:** `GET /api/admin/dashboard`
@@ -87,7 +92,8 @@
   - Logs de auditoría (24 horas)
 - **Función SQL:** `refresh_admin_dashboard()` - Actualiza vista materializada
 
-### Flutter
+### Flutter - Dashboard
+
 - **Pantalla:** `admin_dashboard_screen.dart`
   - Grid de métricas clave (6 cards)
   - Gráfico de ingresos (LineChart con FL Chart)
@@ -100,7 +106,8 @@
 
 ## 4. 📥 Exportación de Datos
 
-### Backend (Rust)
+### Backend Rust - Exportación
+
 - **Tabla:** `export_logs` - Historial de exportaciones
 - **Endpoint:** `GET /api/admin/export?type=payroll&format=csv`
   - Tipos: payroll, production, users, audit, contracts
@@ -111,7 +118,8 @@
   - `rust_xlsxwriter = "0.68"` - Generación Excel
   - `printpdf = "0.7"` - Generación PDF
 
-### Flutter
+### Flutter - Exportación
+
 - **Diálogo de exportación** en Admin Dashboard
   - Selección de formato (CSV, Excel, PDF)
   - Feedback con SnackBar
@@ -121,7 +129,8 @@
 
 ## 5. 🔄 Sincronización en Background
 
-### Flutter
+### Flutter - Background Sync
+
 - **Servicio:** `background_sync_service.dart`
   - WorkManager para tareas periódicas
   - Tarea de sincronización cada 15 minutos
@@ -138,7 +147,8 @@
 
 ## 6. 🌍 Multi-idioma (i18n)
 
-### Flutter
+### Flutter - Internacionalización
+
 - **Archivo:** `l10n/app_localizations.dart`
 - **Idiomas soportados:**
   - 🇺🇸 Inglés (EN-US)
@@ -164,7 +174,8 @@
 
 ## 7. 🧪 Tests Automatizados
 
-### Backend (Rust)
+### Backend Rust - Testing
+
 - **Archivo:** `tests/integration_tests.rs`
 - **Tests incluidos:**
   - Health endpoint check
@@ -181,7 +192,8 @@
   - `hyper = "1.0"`
   - `http-body-util = "0.1"`
 
-### Flutter
+### Flutter - Testing
+
 - **Archivos:**
   - `test/unit_tests.dart` - Tests unitarios
   - `test/widget_tests.dart` - Tests de UI
@@ -227,6 +239,7 @@
 ## 📦 Dependencias Agregadas
 
 ### Backend (Cargo.toml)
+
 ```toml
 sha2 = "0.10"           # SHA256 hashing
 hex = "0.4"             # Hex encoding
@@ -237,6 +250,7 @@ printpdf = "0.7"        # PDF generation
 ```
 
 ### Frontend (pubspec.yaml)
+
 ```yaml
 workmanager: ^0.5.2               # Background tasks
 firebase_core: ^3.11.0             # Firebase base
@@ -258,6 +272,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 **25 endpoints** en total:
 
 ### Auth (5)
+
 - POST /login
 - POST /register
 - POST /auth/refresh ✨ NUEVO
@@ -265,25 +280,30 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - POST /auth/send-otp
 
 ### Notifications (4) ✨ NUEVOS
+
 - GET /api/notifications
 - POST /api/notifications/mark-read
 - POST /api/notifications/register-device
 - POST /api/admin/notifications/send
 
 ### Admin (3)
+
 - GET /api/admin/dashboard ✨ NUEVO
 - GET /api/admin/export ✨ NUEVO
 - GET /api/admin/financial-history
 
 ### Moderator (2)
+
 - GET /api/mod/groups
 - POST /api/mod/production
 
 ### Model (2)
+
 - GET /api/model/home
 - POST /api/model/sign-contract
 
 ### Others (9)
+
 - GET /
 - GET /health
 - POST /setup_admin
@@ -315,6 +335,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 ## ✅ Estado de Implementación
 
 ### Completado 100%
+
 - ✅ Refresh Token Mechanism (backend + Flutter)
 - ✅ Sistema de Notificaciones (backend + servicio Flutter)
 - ✅ Admin Dashboard (backend + UI Flutter)
@@ -324,6 +345,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - ✅ Tests Automatizados (backend + Flutter)
 
 ### Pendientes (opcionales)
+
 - ⏳ UI de notificaciones (pantalla dedicada)
 - ⏳ Configuración Firebase (google-services.json)
 - ⏳ Generación real de archivos CSV/Excel/PDF
@@ -335,6 +357,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 ## 🔥 Próximos Pasos Sugeridos
 
 1. **Aplicar migraciones:**
+
    ```bash
    docker-compose down
    docker-compose up -d
@@ -342,18 +365,21 @@ fl_chart: ^0.69.0                  # Charts for dashboard
    ```
 
 2. **Compilar backend:**
+
    ```bash
    cd backend_api
    cargo build --release
    ```
 
 3. **Instalar deps Flutter:**
+
    ```bash
    cd mobile_app
    flutter pub get
    ```
 
 4. **Ejecutar tests:**
+
    ```bash
    # Backend
    cargo test
@@ -369,6 +395,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
    - Colocar en directorios correspondientes
 
 6. **Commit a Git:**
+
    ```bash
    git add .
    git commit -m "feat: Refresh tokens, notifications, admin dashboard, i18n, background sync, tests"
@@ -379,12 +406,12 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 
 ## 🎓 Documentación de Referencia
 
-- **JWT Refresh Tokens:** https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/
-- **Flutter WorkManager:** https://pub.dev/packages/workmanager
-- **Firebase Messaging:** https://firebase.google.com/docs/cloud-messaging
-- **Flutter i18n:** https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization
-- **FL Chart:** https://pub.dev/packages/fl_chart
-- **Rust SQLx:** https://docs.rs/sqlx/latest/sqlx/
+- **JWT Refresh Tokens:** <https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/>
+- **Flutter WorkManager:** <https://pub.dev/packages/workmanager>
+- **Firebase Messaging:** <https://firebase.google.com/docs/cloud-messaging>
+- **Flutter i18n:** <https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization>
+- **FL Chart:** <https://pub.dev/packages/fl_chart>
+- **Rust SQLx:** <https://docs.rs/sqlx/latest/sqlx/>
 
 ---
 

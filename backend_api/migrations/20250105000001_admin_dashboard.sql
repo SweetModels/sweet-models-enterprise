@@ -43,7 +43,7 @@ SELECT
     (SELECT COUNT(*) FROM users) as total_users,
     (SELECT COUNT(*) FROM users WHERE role = 'model') as total_models,
     (SELECT COUNT(*) FROM users WHERE role = 'moderator') as total_moderators,
-    (SELECT COUNT(DISTINCT user_id) FROM production_logs 
+    (SELECT COUNT(DISTINCT model_id) FROM production_logs 
      WHERE production_date >= CURRENT_DATE - INTERVAL '7 days') as active_users_week,
     
     -- Group stats
@@ -61,8 +61,7 @@ SELECT
      WHERE production_date >= CURRENT_DATE - INTERVAL '30 days') as avg_tokens_per_log,
     
     -- Contract stats
-    (SELECT COUNT(*) FROM contracts WHERE status = 'active') as active_contracts,
-    (SELECT COUNT(*) FROM contracts WHERE status = 'pending') as pending_contracts,
+    (SELECT COUNT(*) FROM contracts) as total_contracts,
     (SELECT COUNT(*) FROM contracts 
      WHERE signed_at >= CURRENT_DATE - INTERVAL '7 days') as contracts_signed_week,
     
@@ -76,11 +75,11 @@ SELECT
     
     -- Top performers
     (SELECT json_agg(row_to_json(t)) FROM (
-        SELECT u.id, u.email, u.full_name, SUM(pl.tokens_earned) as total_tokens
+        SELECT u.id, u.email, SUM(pl.tokens_earned) as total_tokens
         FROM users u
-        JOIN production_logs pl ON u.id = pl.user_id
+        JOIN production_logs pl ON u.id = pl.model_id
         WHERE pl.production_date >= CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY u.id, u.email, u.full_name
+        GROUP BY u.id, u.email
         ORDER BY total_tokens DESC
         LIMIT 10
     ) t) as top_models_30_days,
@@ -124,9 +123,9 @@ BEGIN
     SELECT
         today,
         (SELECT COUNT(*) FROM users),
-        (SELECT COUNT(DISTINCT user_id) FROM production_logs WHERE production_date = today),
+        (SELECT COUNT(DISTINCT model_id) FROM production_logs WHERE production_date = today),
         (SELECT COUNT(*) FROM users WHERE role = 'model'),
-        (SELECT COUNT(DISTINCT user_id) FROM production_logs WHERE production_date = today AND user_id IN (SELECT id FROM users WHERE role = 'model')),
+        (SELECT COUNT(DISTINCT model_id) FROM production_logs WHERE production_date = today AND model_id IN (SELECT id FROM users WHERE role = 'model')),
         (SELECT COUNT(*) FROM groups),
         (SELECT COALESCE(SUM(tokens_earned), 0) FROM production_logs WHERE production_date = today),
         (SELECT COUNT(*) FROM contracts WHERE DATE(signed_at) = today),

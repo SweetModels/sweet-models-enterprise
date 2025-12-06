@@ -5,7 +5,8 @@ Herramientas automatizadas para compilar y distribuir Sweet Models Enterprise.
 ## 📜 Scripts Disponibles
 
 ### 1️⃣ `setup_android_signing.ps1`
-**Configuración inicial de firma para Android**
+
+Configuración inicial de firma para Android.
 
 Genera el keystore necesario para firmar APKs/AABs de producción.
 
@@ -14,6 +15,7 @@ Genera el keystore necesario para firmar APKs/AABs de producción.
 ```
 
 **Lo que hace:**
+
 - ✅ Verifica que keytool esté instalado
 - ✅ Genera keystore RSA 2048-bit válido por 27 años
 - ✅ Crea `android/key.properties` con credenciales
@@ -21,7 +23,8 @@ Genera el keystore necesario para firmar APKs/AABs de producción.
 - ✅ Actualiza `.gitignore` para proteger archivos sensibles
 - ✅ Muestra instrucciones para modificar `build.gradle`
 
-**⚠️ IMPORTANTE:** 
+**⚠️ IMPORTANTE:**
+
 - Solo ejecuta UNA VEZ (al inicio del proyecto)
 - Guarda el keystore en 3 lugares seguros
 - Sin el keystore NO podrás actualizar la app en Google Play
@@ -29,7 +32,8 @@ Genera el keystore necesario para firmar APKs/AABs de producción.
 ---
 
 ### 2️⃣ `build_release.ps1`
-**Compilador principal de releases**
+
+Compilador principal de releases.
 
 Compila APKs, AABs, EXEs y MSIXs para distribución.
 
@@ -51,11 +55,13 @@ Compila APKs, AABs, EXEs y MSIXs para distribución.
 ```
 
 **Parámetros:**
+
 - `-Platform`: `android` | `windows` | `all` (default: `all`)
 - `-Clean`: Limpia builds anteriores con `flutter clean`
 - `-SkipTests`: Omite ejecución de tests
 
 **Genera:**
+
 - 📱 **Android:**
   - `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (~16-18 MB)
   - `build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk` (~15-17 MB)
@@ -70,7 +76,8 @@ Compila APKs, AABs, EXEs y MSIXs para distribución.
 ---
 
 ### 3️⃣ `bump_version.ps1`
-**Actualizador de versiones**
+
+Actualizador de versiones.
 
 Incrementa versión siguiendo Semantic Versioning (SemVer).
 
@@ -89,6 +96,7 @@ Incrementa versión siguiendo Semantic Versioning (SemVer).
 ```
 
 **Lo que hace:**
+
 - ✅ Lee versión actual de `pubspec.yaml`
 - ✅ Incrementa según tipo especificado
 - ✅ Actualiza `pubspec.yaml` e `installer_setup.iss`
@@ -96,6 +104,7 @@ Incrementa versión siguiendo Semantic Versioning (SemVer).
 - ✅ Muestra changelog sugerido
 
 **Tipos de versión (SemVer):**
+
 - `build`: Cambios internos, mismo código público
 - `patch`: Correcciones de bugs (1.0.0 → 1.0.1)
 - `minor`: Nuevas funcionalidades compatibles (1.0.0 → 1.1.0)
@@ -105,11 +114,11 @@ Incrementa versión siguiendo Semantic Versioning (SemVer).
 
 ## 🔄 Workflow Completo
 
-### Primera vez (Setup inicial):
+### Primera vez (Setup inicial)
 
 ```powershell
 # 1. Configurar firma de Android (solo una vez)
-.\setup_android_signing.ps1
+.\.setup_android_signing.ps1
 
 # 2. Modificar android/app/build.gradle según instrucciones
 code android\app\build.gradle
@@ -118,7 +127,7 @@ code android\app\build.gradle
 .\build_release.ps1 -Platform all
 ```
 
-### Releases subsecuentes:
+### Releases subsecuentes
 
 ```powershell
 # 1. Hacer cambios en el código...
@@ -141,7 +150,7 @@ git push origin v1.0.1
 
 ## 📁 Estructura de Archivos Generados
 
-```
+```text
 mobile_app/
 ├── build/
 │   ├── app/outputs/
@@ -167,15 +176,18 @@ mobile_app/
 
 ## ⚙️ Requisitos Previos
 
-### Para Android:
+### Para Android
+
 - ✅ Flutter 3.24.5+ (`flutter --version`)
 - ✅ Java JDK 11+ con keytool (`keytool -help`)
 - ✅ Android SDK (`flutter doctor`)
 
-### Para Windows:
+### Para Windows
+
 - ✅ Flutter con soporte Windows (`flutter config --enable-windows-desktop`)
 - ✅ Visual Studio 2022 con C++ desktop development
 - ✅ (Opcional) Inno Setup 6 para instalador EXE:
+
   ```powershell
   winget install --id JRSoftware.InnoSetup
   ```
@@ -184,7 +196,8 @@ mobile_app/
 
 ## 🐛 Troubleshooting
 
-### "keytool: command not found"
+### keytool command not found
+
 ```powershell
 # Instalar Java JDK
 winget install --id EclipseAdoptium.Temurin.11.JDK
@@ -192,45 +205,54 @@ winget install --id EclipseAdoptium.Temurin.11.JDK
 # O descargar desde: https://adoptium.net/
 ```
 
-### "Execution of scripts is disabled"
+### Execution of scripts is disabled
+
 ```powershell
 # Permitir ejecución de scripts en PowerShell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-### "Gradle task assembleRelease failed"
+### Gradle task assembleRelease failed
+
 - Verifica que `android/key.properties` exista
 - Verifica que `build.gradle` tenga la configuración de firma
 - Revisa `BUILD_RELEASE_GUIDE.md` sección de troubleshooting
 
-### "MSIX packaging failed"
+### MSIX packaging failed
+
 - Verifica que `msix` esté en `pubspec.yaml` (dev_dependencies)
 - Ejecuta `flutter pub get`
 - Revisa configuración de `msix_config` en pubspec.yaml
 
 ### APK muy grande (>30MB)
+
 - El script compila con `--split-per-abi` (genera 3 APKs separados)
 - Cada APK es ~15-18MB (solo una arquitectura)
 - El AAB automáticamente optimiza por dispositivo en Google Play
+
 
 ---
 
 ## 🔒 Seguridad
 
-### ⚠️ NUNCA subir a Git:
+### NUNCA subir a Git
+
 - ❌ `android/app/upload-keystore.jks`
 - ❌ `android/key.properties`
 - ❌ `android/keystore_backup/CREDENTIALS_*.txt`
 
-### ✅ Hacer backups en:
+### Hacer backups en
+
 1. USB externo (físico, fuera de línea)
 2. Cloud privado (Google Drive con 2FA)
 3. Password manager (1Password/Bitwarden)
 
-### 🔑 Si pierdes el keystore:
+### Si pierdes el keystore
+
 - ❌ **NO podrás actualizar la app en Google Play**
 - ✅ Tendrás que publicar como nueva app (nuevo package name)
 - ✅ Usuarios perderán datos si desinstalan
+
 
 ---
 
@@ -262,22 +284,26 @@ Antes de distribuir, verifica:
 
 ## 💡 Tips
 
-### Compilación rápida (solo debug):
+### Compilación rápida (solo debug)
+
 ```powershell
 flutter build apk --debug
 ```
 
-### Ver tamaño de APK:
+### Ver tamaño de APK
+
 ```powershell
 flutter build apk --analyze-size
 ```
 
-### Probar en dispositivo conectado:
+### Probar en dispositivo conectado
+
 ```powershell
 flutter install
 ```
 
-### Limpiar completamente (si hay problemas):
+### Limpiar completamente (si hay problemas)
+
 ```powershell
 flutter clean
 flutter pub get

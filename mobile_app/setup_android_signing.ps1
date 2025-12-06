@@ -1,6 +1,7 @@
 # ========================================
 # Sweet Models Enterprise
 # Configuración de firma para Android
+# Version: 2.0 - Actualizado 2025-12-06
 # ========================================
 
 $ErrorActionPreference = "Stop"
@@ -14,7 +15,7 @@ Write-Host ""
 # Verificar Java/keytool
 Write-Host "🔍 Verificando keytool..." -ForegroundColor Cyan
 try {
-    $keytoolVersion = keytool -help 2>&1 | Select-String "keytool" | Select-Object -First 1
+    keytool -help 2>&1 | Out-Null
     Write-Host "✅ keytool encontrado" -ForegroundColor Green
 } catch {
     Write-Host "❌ keytool no encontrado" -ForegroundColor Red

@@ -1,6 +1,7 @@
 # 📤 Guía para Subir a GitHub
 
 ## ✅ Estado Actual
+
 - ✅ Repositorio Git inicializado
 - ✅ Commit inicial creado (189 archivos)
 - ✅ .gitignore configurado
@@ -15,7 +16,7 @@
 3. Configura el repositorio:
    - **Repository name**: `sweet-models-enterprise`
    - **Description**: "🚀 Plataforma empresarial completa - Backend Rust/Axum + Flutter Mobile con gamificación y sistema de moderación"
-   - **Visibility**: 
+   - **Visibility**:
      - ✅ **Private** (recomendado para código empresarial)
      - o **Public** (si quieres que sea open source)
    - ⚠️ **NO marques**: "Add README", "Add .gitignore", "Choose a license" (ya los tienes)
@@ -48,6 +49,7 @@ git push -u origin master
 GitHub te pedirá autenticación. Opciones:
 
 #### Opción A: Personal Access Token (Recomendado)
+
 1. Ve a GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Click "Generate new token (classic)"
 3. Nombre: "Sweet Models Enterprise"
@@ -57,6 +59,7 @@ GitHub te pedirá autenticación. Opciones:
 7. Cuando Git pida contraseña, pega el token
 
 #### Opción B: GitHub CLI (Más fácil)
+
 ```powershell
 # Instalar GitHub CLI (si no lo tienes)
 winget install --id GitHub.cli
@@ -70,7 +73,7 @@ gh repo create sweet-models-enterprise --private --source=. --push
 
 ## 📦 Estructura Subida
 
-```
+```text
 sweet-models-enterprise/
 ├── .gitignore              ✅ Archivos ignorados
 ├── README.md               ✅ Documentación principal
@@ -121,13 +124,14 @@ git branch -a
 
 Después de crear el repo, tu URL será:
 
-```
+```text
 https://github.com/TU_USUARIO/sweet-models-enterprise
 ```
 
 ## 🎯 Siguientes Pasos Recomendados
 
 ### 1. Configurar GitHub Actions (CI/CD)
+
 Crea `.github/workflows/rust.yml`:
 
 ```yaml
@@ -147,11 +151,14 @@ jobs:
 ```
 
 ### 2. Configurar GitHub Secrets
+
 Para variables de entorno:
+
 - Settings → Secrets and variables → Actions
 - Add: `DATABASE_URL`, `JWT_SECRET`, etc.
 
 ### 3. Badges en README
+
 Añade al README.md:
 
 ```markdown
@@ -162,13 +169,15 @@ Añade al README.md:
 
 ## ⚠️ Importante: Seguridad
 
-### Antes de hacer el repo público:
+### Antes de hacer el repo público
+
 - ✅ Verifica que no hay contraseñas hardcodeadas
 - ✅ Revisa que `.gitignore` funciona
 - ✅ Cambia `JWT_SECRET` en producción
 - ✅ Usa variables de entorno para credenciales
 
-### Archivos a revisar:
+### Archivos a revisar
+
 ```powershell
 # Buscar posibles secrets
 git grep -i "password"
@@ -179,6 +188,7 @@ git grep -i "token"
 ## 📞 Soporte
 
 Si tienes problemas:
+
 1. Revisa el status: `git status`
 2. Revisa los remotos: `git remote -v`
 3. Verifica autenticación: `gh auth status`

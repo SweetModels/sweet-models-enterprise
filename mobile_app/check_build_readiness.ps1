@@ -179,7 +179,7 @@ if (Test-Path "installer_setup.iss") {
 Write-Host ""
 Write-Host "🔍 Verificando dependencias Flutter..." -ForegroundColor Cyan
 try {
-    $pubGetOutput = flutter pub get 2>&1
+    flutter pub get 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "   ✅ Dependencias resueltas correctamente" -ForegroundColor Green
     } else {
@@ -196,16 +196,16 @@ Write-Host ""
 Write-Host "🔍 Verificando configuración de backend..." -ForegroundColor Cyan
 
 $libFiles = Get-ChildItem "lib" -Recurse -Filter "*.dart" -ErrorAction SilentlyContinue
-$backendUrls = $libFiles | Select-String -Pattern "http://|https://" | Select-Object -First 5
+$backendUrls = $libFiles | Select-String -Pattern "http:|https:" | Select-Object -First 5
 
 if ($backendUrls) {
     Write-Host "   ℹ️  URLs encontradas en el código:" -ForegroundColor Cyan
-    foreach ($url in $backendUrls) {
-        $urlMatch = $url.Line -match "(https?://[^\s'\"]+)"
-        if ($urlMatch) {
+    foreach ($urlLine in $backendUrls) {
+        $line = $urlLine.Line
+        if ($line -match '(https?://[^\s''\"]+)') {
             $urlFound = $matches[1]
-            if ($urlFound -match "localhost|127.0.0.1") {
-                Write-Host "      ⚠️  $urlFound (localhost - ¿es correcto para producción?)" -ForegroundColor Yellow
+            if ($urlFound -match 'localhost|127\.0\.0\.1') {
+                Write-Host "      ⚠️  $urlFound (localhost - es correcto para produccion?)" -ForegroundColor Yellow
                 $warnings++
             } else {
                 Write-Host "      ✅ $urlFound" -ForegroundColor Green
@@ -284,6 +284,6 @@ if ($issues -eq 0 -and $warnings -eq 0) {
     Write-Host "📝 Ayuda:" -ForegroundColor Cyan
     Write-Host "   • Revisa BUILD_RELEASE_GUIDE.md" -ForegroundColor Gray
     Write-Host "   • Ejecuta: .\setup_android_signing.ps1" -ForegroundColor Gray
-    Write-Host "   • Verifica que estés en el directorio mobile_app/" -ForegroundColor Gray
+    Write-Host "   • Verifica que estes en el directorio mobile_app/" -ForegroundColor Gray
     exit 1
 }

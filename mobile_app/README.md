@@ -5,24 +5,28 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 ## ✨ Características
 
 ### 🔐 Autenticación
+
 - Login/Logout con JWT (access tokens 24h + refresh tokens 30 días)
 - Renovación automática de tokens antes de expiración
 - Gestión de sesiones con revocación de tokens
 - Modo offline con caché local
 
 ### 👥 Gestión de Usuarios
+
 - Roles: Model, Moderador, Administrador
 - Perfiles personalizados con gamificación
 - Sistema de puntos y niveles
 - Top performers con rankings
 
 ### 📊 Operaciones Diarias
+
 - Registro de producción por modelo
 - Cálculo automático de tokens/comisiones
 - Logs de auditoría detallados
 - Sincronización en background cada 15 minutos
 
 ### 🔔 Notificaciones
+
 - In-app notifications con caché offline
 - Push notifications (Firebase Cloud Messaging)
 - Preferencias personalizables (push/email/in-app)
@@ -30,23 +34,27 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Prioridades (info, success, warning, error)
 
 ### 📈 Admin Dashboard
+
 - Métricas en tiempo real (modelos activos, ingresos, tokens)
 - Gráficas de ingresos (30 días con FL Chart)
 - Top 10 performers
 - Exportación de datos (CSV/Excel/PDF)
 
 ### 🌍 Internacionalización (i18n)
+
 - 3 idiomas: Inglés (EN-US), Español (ES-CO), Portugués (PT-BR)
 - 340+ traducciones
 - Cambio dinámico de idioma
 
 ### 🔄 Background Tasks
+
 - WorkManager para tareas periódicas
 - Sincronización automática de producción (15 min)
 - Verificación de notificaciones (30 min)
 - Persistencia de tareas pendientes
 
 ### 🧪 Testing
+
 - Unit tests para lógica de negocio
 - Widget tests para UI components
 - Cobertura de código >80%
@@ -108,22 +116,26 @@ flutter test
 ## 🏗️ Arquitectura
 
 ### State Management
+
 - **Riverpod 2.6+** para gestión de estado
 - Providers para services (Auth, Notifications, Background Sync)
 - StateNotifier para estados complejos
 
 ### Networking
+
 - **Dio** para peticiones HTTP con interceptors
 - Automatic token injection/refresh
 - Retry logic con exponential backoff
 - Offline detection con caché fallback
 
 ### Persistencia Local
+
 - **SharedPreferences** para settings y tokens
 - **WorkManager** para background tasks
 - Caché de notificaciones para modo offline
 
 ### Backend API
+
 - **Base URL**: `http://localhost:3000` (desarrollo)
 - **Producción**: Configurar en `lib/services/api_service.dart`
 - **Endpoints**: 25+ REST APIs (auth, users, production, notifications, admin)
@@ -168,11 +180,12 @@ class ApiService {
 ### Android Signing
 
 Ejecuta `setup_android_signing.ps1` y sigue las instrucciones para:
+
 - Generar keystore con keytool
 - Crear `android/key.properties`
 - Configurar `android/app/build.gradle`
 
-## 🧪 Testing
+## 🧪 Ejecutar Tests
 
 ```powershell
 # Todos los tests
@@ -242,11 +255,12 @@ Proyecto privado - Sweet Models Enterprise © 2024
 
 - **Issues**: [GitHub Issues](https://github.com/SweetModels/sweet-models-enterprise/issues)
 - **Documentación**: Ver archivos `*_GUIDE.md` y `*_README.md`
-- **Email**: soporte@sweetmodels.com
+- **Email**: <soporte@sweetmodels.com>
 
 ## 🎯 Roadmap
 
 ### ✅ Completado (v1.0.0)
+
 - Autenticación JWT con refresh tokens
 - Sistema de notificaciones (in-app + push)
 - Admin dashboard con métricas
@@ -256,10 +270,12 @@ Proyecto privado - Sweet Models Enterprise © 2024
 - Tests automatizados
 
 ### 🔄 En Progreso
+
 - Builds de producción (Android/Windows)
 - Distribución en Google Play / Microsoft Store
 
 ### 📋 Próximamente (v1.1.0)
+
 - iOS support (requiere Mac)
 - Chat en tiempo real (WebSockets)
 - Reportes avanzados con filtros
@@ -268,6 +284,7 @@ Proyecto privado - Sweet Models Enterprise © 2024
 - Soporte para tablets/iPad
 
 ### 🔮 Futuro (v2.0.0)
+
 - Machine Learning para predicciones
 - Sistema de pagos integrado
 - API pública para integraciones
@@ -276,4 +293,4 @@ Proyecto privado - Sweet Models Enterprise © 2024
 
 ---
 
-**Desarrollado con ❤️ usando Flutter, Rust y PostgreSQL**
+Desarrollado con ❤️ usando Flutter, Rust y PostgreSQL

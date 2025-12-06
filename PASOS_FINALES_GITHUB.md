@@ -1,10 +1,11 @@
 # 🔐 Autenticación GitHub - Pasos Finales
 
 ## ✅ Ya Completado
+
 - ✅ Git inicializado
 - ✅ Commit creado (189 archivos)
 - ✅ Usuario configurado (swetmodels)
-- ✅ Remote añadido (https://github.com/swetmodels/sweet-models-enterprise.git)
+- ✅ Remote añadido (<https://github.com/swetmodels/sweet-models-enterprise.git>)
 - ✅ GitHub CLI instalado
 
 ## 🚀 Pasos que DEBES completar AHORA
@@ -19,13 +20,13 @@ En la terminal PowerShell actual, verás un prompt interactivo. Sigue estos paso
 
 3. **Login Method**: Selecciona **Login with a web browser** (presiona Enter)
 
-4. **Código de un solo uso**: 
+4. **Código de un solo uso**:
    - Te mostrará un código de 8 caracteres (ej: `ABCD-1234`)
    - **COPIA este código**
 
 5. **Navegador**:
    - Se abrirá automáticamente tu navegador
-   - Si no se abre, ve manualmente a: https://github.com/login/device
+   - Si no se abre, ve manualmente a: <https://github.com/login/device>
    - **Pega el código** que copiaste
    - Click **Continue**
    - Click **Authorize github** (autorizar GitHub CLI)
@@ -70,7 +71,7 @@ gh repo view --web
 
 Después de ejecutar `gh repo create`, verás:
 
-```
+```text
 ✓ Created repository swetmodels/sweet-models-enterprise on GitHub
 ✓ Added remote https://github.com/swetmodels/sweet-models-enterprise.git
 Enumerating objects: 195, done.
@@ -88,9 +89,10 @@ Branch 'master' set up to track remote branch 'master' from 'origin'.
 
 ## 📊 Tu Repositorio
 
-URL: **https://github.com/swetmodels/sweet-models-enterprise**
+URL: **<https://github.com/swetmodels/sweet-models-enterprise>**
 
 Contendrá:
+
 - ✅ 189 archivos
 - ✅ Backend Rust completo
 - ✅ Flutter mobile app
@@ -118,19 +120,23 @@ git push
 ## ❓ Si Tienes Problemas
 
 ### Error: "remote origin already exists"
+
 ```powershell
 git remote remove origin
 gh repo create sweet-models-enterprise --public --source=. --remote=origin --push
 ```
 
 ### Error: "repository not found"
+
 Primero crea el repo, luego push:
+
 ```powershell
 gh repo create sweet-models-enterprise --public
 git push -u origin master
 ```
 
 ### Ver status de auth
+
 ```powershell
 gh auth status
 ```

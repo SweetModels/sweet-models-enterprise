@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: sme_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - internal_net
     healthcheck:
@@ -17,7 +19,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Do NOT publish ports; keep DB internal only
 
   backend:
     build:

@@ -16,12 +16,14 @@ version: 1.0.0+1
 ```
 
 **Reglas de versionado semántico:**
+
 - **MAJOR (1.x.x)**: Cambios incompatibles con versiones anteriores
 - **MINOR (x.1.x)**: Nuevas funcionalidades compatibles
 - **PATCH (x.x.1)**: Correcciones de bugs
 - **BUILD (+1)**: Incrementa en cada compilación
 
 **Ejemplos:**
+
 - Primera release pública: `1.0.0+1`
 - Hotfix: `1.0.1+2`
 - Nueva funcionalidad: `1.1.0+3`
@@ -54,7 +56,8 @@ keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -vali
 ```
 
 **Resultado esperado:**
-```
+
+```texttext
 Generando par de claves RSA de 2048 bits y certificado autofirmado (SHA256withRSA) con una validez de 10000 días
         para: CN=Sweet Models Enterprise, OU=Development, O=Sweet Models, L=Bogotá, ST=Cundinamarca, C=CO
 [Storing upload-keystore.jks]
@@ -78,7 +81,8 @@ storeFile=../app/upload-keystore.jks
 **⚠️ NUNCA subas `key.properties` ni `upload-keystore.jks` a Git.**
 
 Verifica que estén en `.gitignore`:
-```
+
+```gitignore
 android/key.properties
 android/app/upload-keystore.jks
 ```
@@ -135,12 +139,14 @@ flutter build apk --release --split-per-abi
 ```
 
 **Salida esperada:**
-```
+
+```text
 ✓ Built build\app\outputs\flutter-apk\app-release.apk (18.5MB)
 ```
 
 **Si usaste --split-per-abi:**
-```
+
+```text
 ✓ Built build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk (15.2MB)
 ✓ Built build\app\outputs\flutter-apk\app-arm64-v8a-release.apk (16.8MB)
 ✓ Built build\app\outputs\flutter-apk\app-x86_64-release.apk (17.1MB)
@@ -156,6 +162,7 @@ flutter build appbundle --release
 ```
 
 **Ventajas del AAB:**
+
 - Google Play genera APKs optimizados por dispositivo
 - Reduce tamaño de descarga (~35% menos)
 - Requerido para apps nuevas en Play Store desde 2021
@@ -213,6 +220,7 @@ flutter pub run msix:create
 ```
 
 **Características del MSIX:**
+
 - ✅ Instalación con un clic
 - ✅ Actualizaciones automáticas
 - ✅ Desinstalación limpia
@@ -297,6 +305,7 @@ Filename: "{app}\sweet_models_mobile.exe"; Description: "Launch Sweet Models Ent
 ```
 
 **Características del EXE (Inno Setup):**
+
 - ✅ Asistente de instalación profesional
 - ✅ Multi-idioma (EN, ES, PT)
 - ✅ Opción de icono en escritorio
@@ -310,6 +319,7 @@ Filename: "{app}\sweet_models_mobile.exe"; Description: "Launch Sweet Models Ent
 ## 4️⃣ COMANDOS RÁPIDOS (CHEAT SHEET)
 
 ### Android APK
+
 ```powershell
 cd mobile_app
 flutter clean && flutter pub get
@@ -318,6 +328,7 @@ flutter build apk --release --split-per-abi
 ```
 
 ### Android AAB (Google Play)
+
 ```powershell
 cd mobile_app
 flutter clean && flutter pub get
@@ -326,6 +337,7 @@ flutter build appbundle --release
 ```
 
 ### Windows MSIX
+
 ```powershell
 cd mobile_app
 flutter clean && flutter pub get
@@ -335,6 +347,7 @@ flutter pub run msix:create
 ```
 
 ### Windows EXE (Inno Setup)
+
 ```powershell
 cd mobile_app
 flutter clean && flutter pub get
@@ -348,6 +361,7 @@ flutter build windows --release
 ## 5️⃣ VERIFICACIÓN DE BUILDS
 
 ### Android
+
 ```powershell
 # Verificar firma del APK
 keytool -printcert -jarfile build\app\outputs\flutter-apk\app-release.apk
@@ -357,6 +371,7 @@ keytool -printcert -jarfile build\app\outputs\flutter-apk\app-release.apk
 ```
 
 ### Windows
+
 ```powershell
 # Verificar archivos compilados
 dir build\windows\x64\runner\Release\
@@ -386,13 +401,15 @@ dir build\windows\x64\runner\Release\
 
 ## 7️⃣ DISTRIBUCIÓN
 
-### Android
+### Plataforma Android
+
 - **APK directo**: Subir a servidor web o enviar por email
 - **Google Play Store**: Subir AAB a Play Console
 - **Firebase App Distribution**: Para beta testers
 - **APKPure/APKMirror**: Distribución alternativa
 
-### Windows
+### Plataforma Windows
+
 - **MSIX**: Microsoft Store o instalación local
 - **EXE**: Hosting en web, GitHub Releases, OneDrive
 - **Portable**: Carpeta Release\ zipeada (sin instalador)
@@ -401,9 +418,9 @@ dir build\windows\x64\runner\Release\
 
 ## 8️⃣ SEGURIDAD Y BACKUPS
 
-### ⚠️ CRÍTICO - GUARDAR DE FORMA SEGURA:
+### ⚠️ CRÍTICO - GUARDAR DE FORMA SEGURA
 
-```
+```text
 📁 BACKUPS OBLIGATORIOS:
 ├── android/app/upload-keystore.jks  (archivo binario)
 ├── android/key.properties            (contraseñas)
@@ -462,6 +479,7 @@ Write-Host "⚠️  COMPLETA LAS CONTRASEÑAS Y GUÁRDALO DE FORMA SEGURA"
 ## 9️⃣ TROUBLESHOOTING
 
 ### Error: "keytool no reconocido"
+
 ```powershell
 # Agregar Java al PATH
 $env:Path += ";C:\Program Files\Java\jdk-17\bin"
@@ -469,6 +487,7 @@ $env:Path += ";C:\Program Files\Java\jdk-17\bin"
 ```
 
 ### Error: "Gradle build failed"
+
 ```powershell
 cd android
 .\gradlew clean
@@ -479,12 +498,14 @@ flutter build apk --release
 ```
 
 ### Error: MSIX firma inválida
+
 ```powershell
 # En desarrollo, Windows acepta certificados autofirmados
 # Para producción, comprar certificado de firma de código
 ```
 
 ### APK muy grande
+
 ```powershell
 # Usar split-per-abi (reduce ~30%)
 flutter build apk --release --split-per-abi

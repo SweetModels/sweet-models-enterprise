@@ -1,6 +1,7 @@
 # ========================================
 # Sweet Models Enterprise - Build Script
-# Automatiza la compilación de releases
+# Automatización de compilación de releases
+# Version: 2.0 - Actualizado 2025-12-06
 # ========================================
 
 param(
@@ -66,7 +67,7 @@ Write-Success "✅ Dependencias actualizadas"
 # Ejecutar tests (opcional)
 if (-not $SkipTests) {
     Write-Info "🧪 Ejecutando tests..."
-    $testResult = flutter test
+    flutter test
     if ($LASTEXITCODE -ne 0) {
         Write-Warning "⚠️  Algunos tests fallaron. ¿Continuar? (S/N)"
         $continue = Read-Host
@@ -79,7 +80,7 @@ if (-not $SkipTests) {
 }
 
 # Función para compilar Android
-function Build-Android {
+function Invoke-AndroidBuild {
     Write-Info ""
     Write-Info "============================================"
     Write-Info "📱 COMPILANDO ANDROID"
@@ -128,7 +129,7 @@ function Build-Android {
 }
 
 # Función para compilar Windows
-function Build-Windows {
+function Invoke-WindowsBuild {
     Write-Info ""
     Write-Info "============================================"
     Write-Info "🪟 COMPILANDO WINDOWS"
@@ -197,14 +198,14 @@ function Build-Windows {
 # Ejecutar builds según plataforma seleccionada
 switch ($Platform) {
     'android' {
-        Build-Android
+        Invoke-AndroidBuild
     }
     'windows' {
-        Build-Windows
+        Invoke-WindowsBuild
     }
     'all' {
-        Build-Android
-        Build-Windows
+        Invoke-AndroidBuild
+        Invoke-WindowsBuild
     }
 }
 
