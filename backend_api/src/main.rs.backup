@@ -1,0 +1,650 @@
+use axum::{
+    routing::{get, post},
+    Json, Router,
+    response::IntoResponse,
+    extract::State,
+    http::StatusCode,
+};
+use serde::{Serialize, Deserialize};
+use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
+use tower_http::cors::CorsLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
+use uuid::Uuid;
+use sqlx::types::chrono;
+use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation};
+use argon2::{Argon2, PasswordHasher, PasswordHash, PasswordVerifier};
+use argon2::password_hash::SaltString;
+use rand::thread_rng;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+// ============================================================================
+// CONSTANTS & STRUCTURES
+// ============================================================================
+
+const JWT_SECRET: &[u8] = b"your-secret-key-change-in-production-minimum-32-chars-12345";
+const JWT_EXPIRATION_HOURS: i64 = 24;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Claims {
+    sub: String,
+    email: String,
+    role: String,
+    exp: i64,
+}
+
+#[derive(Serialize)]
+struct HealthResponse {
+    status: &'static str,
+}
+
+#[derive(Serialize)]
+struct MessageResponse {
+    message: String,
+}
+
+#[derive(Deserialize)]
+struct LoginPayload {
+    email: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct LoginResponse {
+    access_token: String,
+    token_type: String,
+    expires_in: i64,
+    role: String,
+    user_id: String,
+}
+
+#[derive(Deserialize)]
+struct RegisterPayload {
+    email: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct RegisterResponse {
+    user_id: String,
+    email: String,
+    role: String,
+}
+
+#[derive(Serialize, Deserialize, sqlx::FromRow)]
+struct User {
+    id: Uuid,
+    email: String,
+    password_hash: String,
+    role: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+}
+
+// ============================================================================
+// FINANCIAL STRUCTURES
+// ============================================================================
+
+/// Estructura para un grupo de modelos
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct GroupDTO {
+    name: String,
+    platform: String,
+    total_tokens: f64,
+    members_count: i32,
+    payout_per_member_cop: f64,
+}
+
+/// Respuesta del dashboard con métricas financieras
+#[derive(Serialize)]
+struct DashboardResponse {
+    groups: Vec<GroupDTO>,
+    total_tokens: f64,
+    total_members: i32,
+    total_payout_cop: f64,
+    trm_used: f64,
+}
+
+/// Solicitud de planificación financiera
+#[derive(Deserialize)]
+struct FinancialPlanningRequest {
+    total_income: f64,
+    expenses: f64,
+    savings_goal: f64,
+    risk_tolerance: String,
+}
+
+/// Respuesta de planificación financiera
+#[derive(Serialize)]
+struct FinancialPlanningResponse {
+    total_income: f64,
+    expenses: f64,
+    disposable_income: f64,
+    savings_goal: f64,
+    recommended_savings: f64,
+    investment_amount: f64,
+    investment_breakdown: InvestmentBreakdown,
+    message: String,
+}
+
+/// Desglose de inversión basado en tolerancia al riesgo
+#[derive(Serialize)]
+struct InvestmentBreakdown {
+    conservative: f64,
+    moderate: f64,
+    aggressive: f64,
+}
+
+// ============================================================================
+// FINANCIAL CONSTANTS
+// ============================================================================
+
+const TRM_MANUAL: f64 = 4000.0;  // Tasa Representativa del Mercado simulada
+const BASE_RATE: f64 = 0.05;     // 5% tasa base
+const SMALL_GROUP_DISCOUNT: f64 = 0.40;  // 40% descuento para grupos < 10k tokens
+const LARGE_GROUP_DISCOUNT: f64 = 0.35;  // 35% descuento para grupos >= 10k tokens
+const DISCOUNT_THRESHOLD: f64 = 10000.0; // Umbral para aplicar descuentos
+
+// ============================================================================
+// ROUTE HANDLERS
+// ============================================================================
+
+async fn root() -> impl IntoResponse {
+    "Sweet Models Enterprise: ONLINE 🔐 JWT + Argon2"
+}
+
+async fn health() -> impl IntoResponse {
+    Json(HealthResponse { status: "ok" })
+}
+
+// ============================================================================
+// SECURITY FUNCTIONS
+// ============================================================================
+
+fn hash_password(password: &str) -> Result<String, String> {
+    let salt = SaltString::generate(thread_rng());
+    let argon2 = Argon2::default();
+    
+    argon2
+        .hash_password(password.as_bytes(), &salt)
+        .map(|hash| hash.to_string())
+        .map_err(|e| format!("Error hashing password: {}", e))
+}
+
+fn verify_password(password: &str, hash: &str) -> Result<bool, String> {
+    let parsed_hash = PasswordHash::new(hash)
+        .map_err(|e| format!("Invalid hash: {}", e))?;
+    
+    let argon2 = Argon2::default();
+    match argon2.verify_password(password.as_bytes(), &parsed_hash) {
+        Ok(_) => Ok(true),
+        Err(_) => Ok(false),
+    }
+}
+
+fn generate_jwt(user_id: &str, email: &str, role: &str) -> Result<String, String> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    
+    let exp = now + (JWT_EXPIRATION_HOURS * 3600);
+    
+    let claims = Claims {
+        sub: user_id.to_string(),
+        email: email.to_string(),
+        role: role.to_string(),
+        exp,
+    };
+    
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(JWT_SECRET),
+    )
+    .map_err(|e| format!("JWT generation error: {}", e))
+}
+
+fn validate_jwt(token: &str) -> Result<Claims, String> {
+    decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(JWT_SECRET),
+        &Validation::default(),
+    )
+    .map(|data| data.claims)
+    .map_err(|e| format!("JWT validation error: {}", e))
+}
+
+// ============================================================================
+// FINANCIAL FUNCTIONS
+// ============================================================================
+
+/// Calcula el pago en COP para un miembro usando la fórmula maestra
+/// Fórmula: pago = (tokens / miembros) * 0.05 * (TRM - 300) * (1 - descuento)
+fn calculate_payout_per_member(
+    total_tokens: f64,
+    members_count: i32,
+) -> f64 {
+    if members_count <= 0 || total_tokens <= 0.0 {
+        return 0.0;
+    }
+
+    let members_float = members_count as f64;
+    let tokens_per_member = total_tokens / members_float;
+    
+    // Base calculation
+    let base_payout = tokens_per_member * BASE_RATE * (TRM_MANUAL - 300.0);
+    
+    // Apply discount based on total tokens
+    let discount = if total_tokens < DISCOUNT_THRESHOLD {
+        SMALL_GROUP_DISCOUNT
+    } else {
+        LARGE_GROUP_DISCOUNT
+    };
+    
+    let final_payout = base_payout * (1.0 - discount);
+    
+    tracing::debug!(
+        "💰 Payout calculation: tokens={}, members={}, per_member={:.2}, base={:.2}, discount={:.0}%, final={:.2}",
+        total_tokens, members_count, tokens_per_member, base_payout, discount * 100.0, final_payout
+    );
+
+    final_payout
+}
+
+/// Crea un grupo de prueba con cálculos financieros
+fn create_test_group(name: &str, platform: &str, total_tokens: f64, members_count: i32) -> GroupDTO {
+    let payout_per_member_cop = calculate_payout_per_member(total_tokens, members_count);
+    
+    GroupDTO {
+        name: name.to_string(),
+        platform: platform.to_string(),
+        total_tokens,
+        members_count,
+        payout_per_member_cop,
+    }
+}
+
+/// Calcula estadísticas totales de un conjunto de grupos
+fn calculate_dashboard_totals(groups: &[GroupDTO]) -> (f64, i32, f64) {
+    let total_tokens: f64 = groups.iter().map(|g| g.total_tokens).sum();
+    let total_members: i32 = groups.iter().map(|g| g.members_count).sum();
+    let total_payout: f64 = groups
+        .iter()
+        .map(|g| g.payout_per_member_cop * g.members_count as f64)
+        .sum();
+    
+    (total_tokens, total_members, total_payout)
+}
+
+// ============================================================================
+// API ENDPOINTS
+// ============================================================================
+
+async fn setup_admin(
+    State(pool): State<PgPool>,
+    Json(payload): Json<RegisterPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("🔧 Creating admin user: {}", payload.email);
+    
+    // Validate email format
+    if !payload.email.contains('@') {
+        return Err((StatusCode::BAD_REQUEST, "Invalid email format".to_string()));
+    }
+    
+    // Validate password strength
+    if payload.password.len() < 8 {
+        return Err((StatusCode::BAD_REQUEST, "Password must be at least 8 characters".to_string()));
+    }
+    
+    let hashed = hash_password(&payload.password)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    
+    let result = sqlx::query(
+        r#"
+        INSERT INTO users (id, email, password_hash, role, created_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, NOW())
+        ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
+        "#
+    )
+    .bind(&payload.email)
+    .bind(&hashed)
+    .bind("admin")
+    .execute(&pool)
+    .await;
+
+    match result {
+        Ok(_) => {
+            tracing::info!("✅ Admin user created: {} with role admin", payload.email);
+            Ok((
+                StatusCode::CREATED,
+                Json(serde_json::json!({
+                    "message": "Admin user created successfully",
+                    "email": payload.email,
+                    "role": "admin"
+                })),
+            ))
+        }
+        Err(e) => {
+            tracing::error!("❌ Error creating admin: {:?}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Database error: {}", e),
+            ))
+        }
+    }
+}
+
+async fn login_handler(
+    State(pool): State<PgPool>,
+    Json(payload): Json<LoginPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("🔐 Login attempt for: {}", payload.email);
+
+    if payload.email.is_empty() || payload.password.is_empty() {
+        tracing::warn!("❌ Empty email or password");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Email and password are required".to_string(),
+        ));
+    }
+
+    let user: Option<User> = sqlx::query_as(
+        r#"
+        SELECT id, email, password_hash, role, created_at
+        FROM users
+        WHERE email = $1
+        "#
+    )
+    .bind(&payload.email)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Database error".to_string(),
+        )
+    })?;
+
+    let user = match user {
+        Some(u) => u,
+        None => {
+            tracing::warn!("❌ User not found: {}", payload.email);
+            return Err((StatusCode::UNAUTHORIZED, "Invalid email or password".to_string()));
+        }
+    };
+
+    let password_valid = verify_password(&payload.password, &user.password_hash)
+        .map_err(|e| {
+            tracing::error!("Password verification error: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e)
+        })?;
+
+    if !password_valid {
+        tracing::warn!("❌ Invalid password for: {}", payload.email);
+        return Err((StatusCode::UNAUTHORIZED, "Invalid email or password".to_string()));
+    }
+
+    let token = generate_jwt(user.id.to_string().as_str(), &user.email, &user.role)
+        .map_err(|e| {
+            tracing::error!("JWT error: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e)
+        })?;
+
+    tracing::info!("✅ Successful login for: {}", user.email);
+
+    Ok((
+        StatusCode::OK,
+        Json(LoginResponse {
+            access_token: token,
+            token_type: "Bearer".to_string(),
+            expires_in: JWT_EXPIRATION_HOURS * 3600,
+            role: user.role,
+            user_id: user.id.to_string(),
+        }),
+    ))
+}
+
+async fn register_handler(
+    State(pool): State<PgPool>,
+    Json(payload): Json<RegisterPayload>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("📝 Registration attempt for: {}", payload.email);
+
+    if payload.email.is_empty() || payload.password.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Email and password are required".to_string()));
+    }
+
+    if payload.password.len() < 8 {
+        return Err((StatusCode::BAD_REQUEST, "Password must be at least 8 characters".to_string()));
+    }
+
+    let hashed = hash_password(&payload.password)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+
+    let user_id = Uuid::new_v4();
+
+    let result = sqlx::query(
+        r#"
+        INSERT INTO users (id, email, password_hash, role, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        "#
+    )
+    .bind(user_id)
+    .bind(&payload.email)
+    .bind(&hashed)
+    .bind("model")
+    .execute(&pool)
+    .await;
+
+    match result {
+        Ok(_) => {
+            tracing::info!("✅ User registered: {}", payload.email);
+            Ok((
+                StatusCode::CREATED,
+                Json(RegisterResponse {
+                    user_id: user_id.to_string(),
+                    email: payload.email,
+                    role: "model".to_string(),
+                }),
+            ))
+        }
+        Err(e) => {
+            if e.to_string().contains("duplicate") {
+                tracing::warn!("⚠️  Email already exists: {}", payload.email);
+                Err((StatusCode::CONFLICT, "Email already registered".to_string()))
+            } else {
+                tracing::error!("Database error: {:?}", e);
+                Err((StatusCode::INTERNAL_SERVER_ERROR, "Registration failed".to_string()))
+            }
+        }
+    }
+}
+
+/// Endpoint del Dashboard - Devuelve métricas financieras
+/// GET /dashboard
+async fn get_dashboard() -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("📊 Dashboard request received");
+
+    // Crear grupos de prueba con datos simulados
+    let groups = vec![
+        create_test_group("LoveHell", "Instagram", 25500.0, 8),
+        create_test_group("SexOrgy", "TikTok", 15800.0, 12),
+        create_test_group("PlayBoys", "Twitch", 5200.0, 4),
+    ];
+
+    // Calcular totales
+    let (total_tokens, total_members, total_payout) = calculate_dashboard_totals(&groups);
+
+    tracing::info!("📈 Dashboard metrics: {} groups, {} tokens, {} members, {:.2} COP payout",
+        groups.len(), total_tokens, total_members, total_payout);
+
+    // Loguear detalles de cada grupo
+    for group in &groups {
+        tracing::debug!(
+            "  📍 Group: {} | Platform: {} | Tokens: {:.0} | Members: {} | Payout/member: {:.2} COP",
+            group.name, group.platform, group.total_tokens, group.members_count, group.payout_per_member_cop
+        );
+    }
+
+    Ok((
+        StatusCode::OK,
+        Json(DashboardResponse {
+            groups,
+            total_tokens,
+            total_members,
+            total_payout_cop: total_payout,
+            trm_used: TRM_MANUAL,
+        }),
+    ))
+}
+
+async fn verify_token_handler(token: String) -> Result<impl IntoResponse, (StatusCode, String)> {
+    match validate_jwt(&token) {
+        Ok(claims) => {
+            tracing::info!("✅ Token valid for: {}", claims.email);
+            Ok((StatusCode::OK, Json(claims)))
+        }
+        Err(e) => {
+            tracing::warn!("❌ Invalid token: {}", e);
+            Err((StatusCode::UNAUTHORIZED, "Invalid token".to_string()))
+        }
+    }
+}
+
+async fn financial_planning_handler(
+    Json(payload): Json<FinancialPlanningRequest>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::info!("💰 Financial planning request: income={}, expenses={}, goal={}, risk={}", 
+        payload.total_income, payload.expenses, payload.savings_goal, payload.risk_tolerance);
+
+    // Validations
+    if payload.total_income <= 0.0 {
+        return Err((StatusCode::BAD_REQUEST, "Total income must be positive".to_string()));
+    }
+    if payload.expenses < 0.0 {
+        return Err((StatusCode::BAD_REQUEST, "Expenses cannot be negative".to_string()));
+    }
+    if payload.expenses >= payload.total_income {
+        return Err((StatusCode::BAD_REQUEST, "Expenses cannot be >= income".to_string()));
+    }
+    if payload.savings_goal < 0.0 {
+        return Err((StatusCode::BAD_REQUEST, "Savings goal cannot be negative".to_string()));
+    }
+
+    // Calculate disposable income
+    let disposable_income = payload.total_income - payload.expenses;
+    
+    // Recommended savings: 20% of disposable income or user goal, whichever is lower
+    let recommended_savings = (disposable_income * 0.20).min(payload.savings_goal);
+    
+    // Investment amount: remaining after savings
+    let investment_amount = (disposable_income - recommended_savings).max(0.0);
+
+    // Calculate investment breakdown based on risk tolerance
+    let investment_breakdown = match payload.risk_tolerance.to_lowercase().as_str() {
+        "conservative" => InvestmentBreakdown {
+            conservative: investment_amount * 0.60,
+            moderate: investment_amount * 0.30,
+            aggressive: investment_amount * 0.10,
+        },
+        "moderate" => InvestmentBreakdown {
+            conservative: investment_amount * 0.40,
+            moderate: investment_amount * 0.40,
+            aggressive: investment_amount * 0.20,
+        },
+        "aggressive" => InvestmentBreakdown {
+            conservative: investment_amount * 0.20,
+            moderate: investment_amount * 0.30,
+            aggressive: investment_amount * 0.50,
+        },
+        _ => InvestmentBreakdown {
+            conservative: investment_amount * 0.40,
+            moderate: investment_amount * 0.40,
+            aggressive: investment_amount * 0.20,
+        },
+    };
+
+    let message = format!(
+        "✅ Financial plan created: Save ${:.2}, Invest ${:.2}",
+        recommended_savings, investment_amount
+    );
+
+    tracing::info!("{}", message);
+
+    Ok((
+        StatusCode::OK,
+        Json(FinancialPlanningResponse {
+            total_income: payload.total_income,
+            expenses: payload.expenses,
+            disposable_income,
+            savings_goal: payload.savings_goal,
+            recommended_savings,
+            investment_amount,
+            investment_breakdown,
+            message,
+        }),
+    ))
+}
+
+// ============================================================================
+// MAIN APPLICATION
+// ============================================================================
+
+#[tokio::main]
+async fn main() {
+    dotenvy::dotenv().ok();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "debug".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .expect("Failed to create pool");
+
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/health", get(health))
+        .route("/setup_admin", post(setup_admin))
+        .route("/login", post(login_handler))
+        .route("/register", post(register_handler))
+        .route("/dashboard", get(get_dashboard))
+        .route("/verify_token", get(verify_token_handler))
+        .route("/api/financial_planning", post(financial_planning_handler))
+        .layer(CorsLayer::permissive())
+        .with_state(pool);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let listener = match TcpListener::bind(&addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("❌ Failed to bind to {}: {}", addr, e);
+            panic!("Cannot bind to port 3000: {}", e);
+        }
+    };
+
+    tracing::info!(
+        "🚀 Starting server on {} with JWT + Argon2 🔐",
+        addr
+    );
+
+    axum::serve(listener, app)
+        .await
+        .expect("Failed to start server");
+        
+    // This should never be reached
+    std::process::exit(0);
+}

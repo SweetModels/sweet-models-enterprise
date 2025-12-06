@@ -1,0 +1,152 @@
+# ============================================================================
+# Sweet Models Enterprise - .gitignore
+# ============================================================================
+
+# ============================================================================
+# RUST BACKEND
+# ============================================================================
+backend_api/target/
+backend_api/**/*.rs.bk
+backend_api/Cargo.lock
+
+# ============================================================================
+# FLUTTER / DART
+# ============================================================================
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/.packages
+mobile_app/build/
+mobile_app/ios/Flutter/flutter_export_environment.sh
+mobile_app/ios/Flutter/Generated.xcconfig
+mobile_app/ios/Flutter/flutter_export_environment.sh
+mobile_app/android/.gradle/
+mobile_app/android/app/debug/
+mobile_app/android/app/profile/
+mobile_app/android/app/release/
+mobile_app/android/local.properties
+mobile_app/linux/flutter/generated_plugin_registrant.cc
+mobile_app/linux/flutter/generated_plugin_registrant.h
+mobile_app/linux/flutter/generated_plugins.cmake
+mobile_app/macos/Flutter/GeneratedPluginRegistrant.swift
+mobile_app/windows/flutter/generated_plugin_registrant.cc
+mobile_app/windows/flutter/generated_plugin_registrant.h
+mobile_app/windows/flutter/generated_plugins.cmake
+
+# ============================================================================
+# PYTHON
+# ============================================================================
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+__pycache__/
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+docker-compose.override.yml
+
+# ============================================================================
+# DATABASE
+# ============================================================================
+*.sql~
+*.dump
+database/data/
+pgdata/
+
+# ============================================================================
+# IDE / EDITORS
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============================================================================
+# LOGS
+# ============================================================================
+*.log
+logs/
+
+# ============================================================================
+# ENVIRONMENT FILES (CREDENTIALS SENSIBLES)
+# ============================================================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+
+# ============================================================================
+# WINDOWS
+# ============================================================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================================
+# TEMPORAL / TESTING
+# ============================================================================
+*.tmp
+*.temp
+test_output/
+coverage/
+*.test
+
+# ============================================================================
+# MSIX (Windows Flutter)
+# ============================================================================
+mobile_app/*.msix
+
+# ============================================================================
+# ARCHIVOS DE DOCUMENTACIÓN INNECESARIOS
+# ============================================================================
+# Mantener README.md principal, ignorar documentación redundante
+CODIGO_COMPLETO_LOGIN.md
+CONFIG_CONECTIVIDAD.md
+DASHBOARD_IMPLEMENTATION.md
+DOCUMENTATION.md
+ENTREGA_FINAL.md
+FINANCIAL_ANALYTICS_API.md
+FINANCIAL_PLANNING_ENDPOINT.md
+GUIA_RAPIDA_LOGIN.md
+INICIO_LIMPIO.md
+INTEGRACION_LOGIN.md
+JWT_ARGON2_FINAL.md
+LOGIN_IMPLEMENTATION.md
+MANUAL_TESTING_GUIDE.md
+RESUMEN_BACKEND_LOGIN.md
+TESTING_REPORT.md
+TRABAJO_COMPLETADO.md
+API_ENDPOINTS.md
+API_SERVICE_DOCUMENTATION.md
+
+# ============================================================================
+# SCRIPTS DE DESARROLLO TEMPORALES
+# ============================================================================
+demo_jwt.ps1
+demo_jwt_complete.ps1
+dev.ps1
+fix_password.py
+hash_password.rs
+insert_docker_user.py
+insert_modelo.py
+insert_modelo_user.py
+insert_model_user.sql
+login.json
+test_financial_planning.ps1
+verify_password.py
+create_model_tables.sql
+create_operations_tables.sql
