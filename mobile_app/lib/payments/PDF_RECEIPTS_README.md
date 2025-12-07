@@ -22,7 +22,7 @@ dependencies:
   share_plus: ^7.2.0
 ```
 
-### Instalación:
+### Instalación
 
 ```bash
 cd mobile_app
@@ -51,30 +51,34 @@ PayoutReceipt(
 
 Servicio principal que maneja la generación y distribución de PDFs.
 
-#### Métodos disponibles:
+#### Métodos disponibles
 
-#### `generateReceipt(PayoutReceipt receipt) → Future<Uint8List>`
+##### `generateReceipt(PayoutReceipt receipt) → Future<Uint8List>`
+
 Genera el PDF y retorna los bytes.
 
 ```dart
 final pdfBytes = await PdfReceiptService.generateReceipt(receipt);
 ```
 
-#### `shareReceipt(PayoutReceipt receipt) → Future<void>`
+##### `shareReceipt(PayoutReceipt receipt) → Future<void>`
+
 Abre el diálogo nativo de compartir (WhatsApp, correo, guardar, etc.)
 
 ```dart
 await PdfReceiptService.shareReceipt(receipt);
 ```
 
-#### `downloadReceipt(PayoutReceipt receipt) → Future<void>`
+##### `downloadReceipt(PayoutReceipt receipt) → Future<void>`
+
 Descarga el PDF al almacenamiento del dispositivo.
 
 ```dart
 await PdfReceiptService.downloadReceipt(receipt);
 ```
 
-#### `printReceipt(PayoutReceipt receipt) → Future<void>`
+##### `printReceipt(PayoutReceipt receipt) → Future<void>`
+
 Abre el visor de impresión nativa.
 
 ```dart
@@ -150,7 +154,7 @@ ListTile(
 
 El PDF generado tiene la siguiente estructura:
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  SWEET MODELS                       │
 │  Enterprise System                  │
@@ -256,22 +260,25 @@ Future<void> emailReceipt(PayoutReceipt receipt, String toEmail) async {
 ## 🐛 Troubleshooting
 
 ### Error: "printing plugin not initialized"
+
 - Solución: Asegurate de que el plugin esté instalado: `flutter pub get`
 
 ### PDF vacío o sin estilos
+
 - Solución: Verificar que las fuentes de Google están disponibles (conexión a internet)
 
 ### No funciona compartir en Android
+
 - Solución: Verificar permisos en `AndroidManifest.xml`
 
 ## 📊 Próximas Mejoras
 
-- [ ] Integración con SendGrid para envío automático por correo
-- [ ] Soporte para múltiples idiomas/localizaciones
-- [ ] QR con referencia de pago para verificación
-- [ ] Firma digital del administrador
-- [ ] Reporte consolidado de pagos en PDF
+- Integración con SendGrid para envío automático por correo
+- Soporte para múltiples idiomas/localizaciones
+- QR con referencia de pago para verificación
+- Firma digital del administrador
+- Reporte consolidado de pagos en PDF
 
 ## 📞 Soporte
 
-Para preguntas o problemas, contacta a: dev@sweetmodels.com
+Para preguntas o problemas, contacta a: <dev@sweetmodels.com>
