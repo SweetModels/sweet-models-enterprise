@@ -7,7 +7,7 @@
 
 ## 📐 Diagrama de Arquitectura
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        SWEET MODELS ENTERPRISE                       │
 └─────────────────────────────────────────────────────────────────────┘
@@ -65,7 +65,7 @@
 
 ### Capas de la Aplicación
 
-```
+```text
 ┌────────────────────────────────────────────┐
 │          PRESENTATION LAYER                │
 │  ┌──────────────────────────────────────┐  │
@@ -133,7 +133,7 @@
 
 ### Flujo de Compartir Recibo
 
-```
+```text
 Usuario toca botón
        ▼
   _generateAndShare()
@@ -165,7 +165,7 @@ Usuario toca botón
 
 ### Estructura Rust/Actix
 
-```
+```text
 backend_api/
 │
 ├── src/
@@ -206,7 +206,7 @@ backend_api/
 
 ### Request Flow
 
-```
+```text
 HTTP Request (REST)
        ▼
   [CORS Middleware]
@@ -230,7 +230,7 @@ HTTP Request (REST)
 
 ### Seguridad Backend
 
-```
+```text
 ┌─────────────────┐
 │  Client Mobile  │
 └────────┬────────┘
@@ -311,7 +311,7 @@ HTTP Request (REST)
 
 ### Deployment Pipeline
 
-```
+```text
 Git Push (main)
        ▼
 GitHub Actions / Railway CI
@@ -352,7 +352,7 @@ GitHub Actions / Railway CI
 
 ### Happy Path (Éxito)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. USER INTERACTION                                         │
 │    User toca "Compartir Recibo PDF"                        │
@@ -418,7 +418,7 @@ GitHub Actions / Railway CI
 
 ### Error Path (Validación Falló)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ USER INTERACTION                                            │
 │ modelName = "" // ❌ Empty!                                │
@@ -458,7 +458,7 @@ GitHub Actions / Railway CI
 
 ### Validación en Capas
 
-```
+```text
 Layer 1: Frontend (Flutter/Dart) ✅
 ├─ Input type checking (TextField validators)
 ├─ Constructor assertions
@@ -495,18 +495,21 @@ Layer 5: Network & Infrastructure ✅
 ## 📈 Performance Characteristics
 
 ### Mobile App
+
 - **PDF Generation**: ~500ms (depends on PDF size)
 - **Share Intent**: ~1000ms (user interaction)
 - **Memory Usage**: ~50-100MB (typical app)
 - **Storage**: ~10MB per PDF
 
 ### Backend API
+
 - **Container Startup**: ~2-3 seconds (Railway)
 - **Request Latency**: ~50-200ms (typical)
 - **Database Query**: ~10-50ms
 - **Container Size**: 50MB (vs 500MB standard)
 
 ### Network
+
 - **HTTPS Handshake**: ~100ms
 - **Data Transfer**: Varies by PDF size
 - **Compression**: gzip enabled
@@ -516,18 +519,21 @@ Layer 5: Network & Infrastructure ✅
 ## 🎯 Deployment Readiness Checklist
 
 ✅ **Code Quality**
+
 - ✅ 0 critical errors
 - ✅ Security hardened
 - ✅ Fully documented
 - ✅ Error handling complete
 
 ✅ **Infrastructure**
+
 - ✅ Docker optimized
 - ✅ Railway ready
 - ✅ Scalable architecture
 - ✅ Monitoring configured
 
 ✅ **Security**
+
 - ✅ HTTPS/TLS
 - ✅ JWT auth
 - ✅ Input validation
@@ -535,12 +541,14 @@ Layer 5: Network & Infrastructure ✅
 - ✅ SQL injection prevention
 
 ✅ **Performance**
+
 - ✅ Multi-stage builds
 - ✅ Distroless runtime
 - ✅ Optimized queries
 - ✅ Caching strategy
 
 ✅ **Documentation**
+
 - ✅ API documentation
 - ✅ Deployment guide
 - ✅ Security analysis
@@ -550,7 +558,7 @@ Layer 5: Network & Infrastructure ✅
 
 ## 🚀 Production Deployment Steps
 
-```
+```bash
 1. GitHub Push
    git add .
    git commit -m "Production release"
@@ -585,6 +593,7 @@ Layer 5: Network & Infrastructure ✅
 ## 📞 Conclusión
 
 La arquitectura es:
+
 - ✅ **Segura**: Validación multi-capa, encriptación end-to-end
 - ✅ **Escalable**: Microservicios, stateless backend
 - ✅ **Performante**: Optimizaciones docker, queries eficientes
