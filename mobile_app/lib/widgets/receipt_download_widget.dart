@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:sweet_models_mobile/services/pdf_receipt_service.dart';
+import 'package:sweet_models_mobile/models/payment_enums.dart';
 
 /// Widget que proporciona botones para generar y compartir recibos PDF
 class ReceiptDownloadWidget extends StatefulWidget {
   final String modelName;
   final double amount;
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
   final String transactionId;
   final String processedBy;
   final String? bankDetails;
+  final Currency currency;
 
   const ReceiptDownloadWidget({
     Key? key,
@@ -18,6 +20,7 @@ class ReceiptDownloadWidget extends StatefulWidget {
     required this.transactionId,
     required this.processedBy,
     this.bankDetails,
+    this.currency = Currency.cop,
   }) : super(key: key);
 
   @override
@@ -44,6 +47,7 @@ class _ReceiptDownloadWidgetState extends State<ReceiptDownloadWidget> {
         transactionId: widget.transactionId,
         processedBy: widget.processedBy,
         bankDetails: widget.bankDetails,
+        currency: widget.currency,
       );
 
       await PdfReceiptService.shareReceipt(receipt);
@@ -101,6 +105,7 @@ class _ReceiptDownloadWidgetState extends State<ReceiptDownloadWidget> {
         transactionId: widget.transactionId,
         processedBy: widget.processedBy,
         bankDetails: widget.bankDetails,
+        currency: widget.currency,
       );
 
       await PdfReceiptService.downloadReceipt(receipt);
@@ -158,6 +163,7 @@ class _ReceiptDownloadWidgetState extends State<ReceiptDownloadWidget> {
         transactionId: widget.transactionId,
         processedBy: widget.processedBy,
         bankDetails: widget.bankDetails,
+        currency: widget.currency,
       );
 
       await PdfReceiptService.printReceipt(receipt);

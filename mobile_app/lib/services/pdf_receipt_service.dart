@@ -5,16 +5,18 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sweet_models_mobile/models/payment_enums.dart';
 
 /// Modelo que representa un comprobante de pago
 class PayoutReceipt {
   final String modelName;
   final double amount;
   final DateTime date;
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
   final String transactionId;
   final String processedBy;
   final String? bankDetails;
+  final Currency currency;
 
   /// Constructor con validaciones básicas
   PayoutReceipt({
@@ -25,11 +27,11 @@ class PayoutReceipt {
     required this.transactionId,
     required this.processedBy,
     this.bankDetails,
+    this.currency = Currency.cop,
   }) {
     // Validaciones
     if (modelName.isEmpty) throw ArgumentError('modelName no puede estar vacío');
     if (amount <= 0) throw ArgumentError('amount debe ser mayor a 0');
-    if (paymentMethod.isEmpty) throw ArgumentError('paymentMethod no puede estar vacío');
     if (transactionId.isEmpty) throw ArgumentError('transactionId no puede estar vacío');
     if (processedBy.isEmpty) throw ArgumentError('processedBy no puede estar vacío');
   }
@@ -56,13 +58,13 @@ class PdfReceiptService {
       final dateFormat = DateFormat('dd/MM/yyyy - hh:mm a', 'es_ES');
       final currencyFormat = NumberFormat.currency(
         locale: 'es_CO',
-        symbol: '\$',
-        decimalDigits: 0,
+        symbol: receipt.currency.symbol,
+        decimalDigits: receipt.currency.decimalDigits,
       );
 
       // Sanitizar datos para prevenir inyecciones
       final sanitizedModelName = _sanitizeText(receipt.modelName);
-      final sanitizedPaymentMethod = _sanitizeText(receipt.paymentMethod);
+      final sanitizedPaymentMethod = _sanitizeText(receipt.paymentMethod.displayName);
 
       pdf.addPage(
         pw.Page(

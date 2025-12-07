@@ -74,8 +74,10 @@ class PayoutReceipt {
 ```
 
 **Mejora sugerida**: Usar enum para paymentMethod
+
 ```dart
 enum PaymentMethod { 
+  bankTransfer,    // Transferencia 
   bankTransfer,    // Transferencia
   card,            // Tarjeta
   cash,            // Efectivo
@@ -97,6 +99,7 @@ String _sanitizeText(String text) {
 ```
 
 **Análisis**:
+
 - ✅ Protege contra inyección de contenido
 - ✅ Seguro para PDFs (no ejecuta JavaScript)
 - ⚠️ Podría extenderse para `&`, `%`, etc.
