@@ -89,11 +89,14 @@ dependencies:
   firebase_messaging: ^15.2.10
   flutter_local_notifications: ^17.0.0
   
+  # PDF generation and printing
+  pdf: ^3.10.0
+  printing: ^5.11.0
+  share_plus: ^7.2.0
+  
   # Export functionality
   csv: ^6.0.0
   path_provider: ^2.1.5
-  share_plus: ^10.1.4
-  pdf: ^3.11.0
   
   # Internationalization
   flutter_localizations:
