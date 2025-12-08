@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'model_profile_screen.dart';
 
 /// Admin Dashboard Statistics Model
@@ -210,7 +209,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             
             // Top Performers
-            _buildTopPerformers(stats),
+            _buildTopPerformers(context, stats),
             
             const SizedBox(height: 24),
             
@@ -357,7 +356,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     });
   }
   
-  Widget _buildTopPerformers(AdminStats stats) {
+  Widget _buildTopPerformers(BuildContext context, AdminStats stats) {
     if (stats.topModels.isEmpty) {
       return const SizedBox.shrink();
     }

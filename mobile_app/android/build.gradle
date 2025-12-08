@@ -1,3 +1,11 @@
+ext {
+    flutter = [
+        compileSdkVersion: 34,
+        targetSdkVersion : 34,
+        minSdkVersion    : 21
+    ]
+}
+
 allprojects {
     repositories {
         google()
@@ -11,6 +19,15 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+// Fix namespace requirement for AGP 8+ in flutter_secure_storage
+subprojects { proj ->
+    if (proj.name == "flutter_secure_storage") {
+        proj.plugins.withId("com.android.library") {
+            proj.android.namespace = "com.it_nomads.fluttersecurestorage"
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

@@ -75,11 +75,11 @@ dependencies:
   
   # Camera & Image
   camera: ^0.10.5+5
-  image_picker: ^0.8.9
+  image_picker: ^0.8.7+4
   
   # Video playback for RTSP streams
-  media_kit: ^1.2.3
-  media_kit_video: ^1.2.3
+  media_kit: ^1.1.10
+  media_kit_video: ^1.2.1
   
   # Background services
   workmanager: ^0.5.2
@@ -97,6 +97,19 @@ dependencies:
   # Export functionality
   csv: ^6.0.0
   path_provider: ^2.1.5
+  
+  # 🌐 Web3 Integration
+  web3dart: ^2.7.1
+  walletconnect_flutter_v2: ^2.0.14
+  convert: ^3.1.1
+  pointycastle: ^3.7.3
+  
+  # 📡 gRPC Communication (fast backend connection)
+  grpc: ^3.0.2
+  
+  # 💬 Chat UI
+  flutter_chat_ui: ^1.6.13
+  uuid: ^4.0.0
   
   # Internationalization
   flutter_localizations:
@@ -168,3 +181,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Forzar versiones compatibles con SDK 34
+dependency_overrides:
+  flutter_plugin_android_lifecycle: 2.0.20
+  image_picker_android: 0.8.8
+  media_kit_video: 1.2.1
+  screen_brightness_android: any

@@ -1,0 +1,32 @@
+# Dockerfile para construir APK en Linux (evita bug de jlink en Windows)
+FROM ubuntu:22.04
+
+# Instalar dependencias
+RUN apt-get update && apt-get install -y \
+    curl git unzip xz-utils zip libglu1-mesa \
+    openjdk-17-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar Flutter
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH="${FLUTTER_HOME}/bin:${PATH}"
+RUN git clone https://github.com/flutter/flutter.git -b stable --depth 1 ${FLUTTER_HOME} && \
+    flutter precache && \
+    flutter config --no-analytics
+
+# Instalar Android SDK
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
+    cd ${ANDROID_HOME}/cmdline-tools && \
+    curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
+    unzip commandlinetools.zip && \
+    mv cmdline-tools latest && \
+    rm commandlinetools.zip && \
+    yes | sdkmanager --licenses && \
+    sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+WORKDIR /work
+
+# Script de build
+CMD ["bash", "-c", "flutter pub get && flutter build apk --release"]

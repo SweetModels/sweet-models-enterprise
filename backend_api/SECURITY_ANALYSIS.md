@@ -7,6 +7,7 @@
 - ✅ **Imagen BUILDER**: rust:1.84-alpine (2 vulnerabilidades altas restantes)
 - ✅ **Imagen RUNNER**: gcr.io/distroless/base-debian12:nonroot (0 vulnerabilidades críticas)
 
+
 ### Vulnerabilidades Conocidas (No Críticas)
 
 #### 2 Vulnerabilidades Altas en rust:1.84-alpine (OS-Level)
@@ -17,6 +18,7 @@
 - **Línea Afectada**: Etapa de BUILDER únicamente
 - **Solución**: Se resuelve automáticamente con actualizaciones de Alpine
 
+
 #### Por qué Distroless para RUNNER
 
 - ✅ Sin shell ni herramientas del sistema
@@ -24,6 +26,7 @@
 - ✅ Ataque surface area mínimo
 - ✅ Tamaño: ~10MB (vs 300MB en Debian)
 - ✅ Certificados SSL incluidos
+
 
 ## Mejoras Implementadas
 
@@ -33,11 +36,13 @@
 - Distroless runtime: Solo binario + librerías esenciales
 - Permisos restrictivos: Usuario nonroot
 
+
 ### 2. Optimizaciones
 
 - **Tamaño final**: ~50MB (vs 300-500MB)
 - **Build time**: 2-3 minutos (caché de Cargo)
 - **Seguridad**: 99.9% reducción de vulnerabilidades
+
 
 ### 3. Variables de Entorno
 
@@ -45,14 +50,15 @@
 - `RUST_LOG`: Control de logging
 - `SSL_CERT_FILE`: Certificados SSL
 
+
 ## Certificación de Vulnerabilidades
 
 Las 2 vulnerabilidades altas restantes son:
 
 1. **CVE-2024-xxxx** - OpenSSL en Alpine (no explotable en contenedor)
 2. **CVE-2024-xxxx** - Parche pendiente (inminente)
-
 **Decisión**: Aceptable para producción - Las vulnerabilidades son a nivel OS y no son explotables en contexto de contenedor.
+
 
 ## Recomendaciones Futuras
 
@@ -60,6 +66,7 @@ Las 2 vulnerabilidades altas restantes son:
 2. Re-scannear imagen mensualmente
 3. Usar Trivy o Snyk para monitoreo continuo
 4. Considerar Red Hat UBI si requieres soporte comercial
+
 
 ## Conclusión
 

@@ -10,6 +10,7 @@ Sistema completo para liquidar saldos pendientes a modelos y gestionar historial
 
 **Tabla `payouts`:**
 
+
 ```sql
 CREATE TABLE payouts (
     id SERIAL PRIMARY KEY,
@@ -24,28 +25,31 @@ CREATE TABLE payouts (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
 ```
 
 **Nueva columna en `users`:**
 
+
 ```sql
 ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
+
 ```
 
 **Funciones SQL:**
-
 - `calculate_pending_balance(user_id)`: Calcula saldo real (ganado - pagado)
 - `sync_all_pending_balances()`: Sincroniza saldos de todos los usuarios
 - `get_user_payout_history(user_id)`: Historial de pagos del usuario
 - `get_payout_stats()`: Estadísticas de pagos (por método, por estado)
+
 
 #### 2. API Endpoints
 
 ### POST /api/admin/payout
 
 - **Propósito**: Procesar liquidación y generar recibo
-
 - **Body:**
+
 
   ```json
   {
@@ -58,6 +62,7 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
   ```
 
 - **Response:**
+
 
   ```json
   {
@@ -77,11 +82,12 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
   4. Genera PDF de recibo
   5. Devuelve confirmación
 
+
 ### GET /api/admin/payouts
 
 - **Propósito**: Obtener historial de pagos
-
 - **Response:**
+
 
   ```json
   {
@@ -95,7 +101,7 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
         "receipt_url": "/uploads/receipts/...",
         "status": "completed",
         "created_at": "2025-12-06T10:30:00Z",
-        "created_by_email": "admin@sweet.com"
+        "created_by_email": "admin`@sweet.com`"
       }
     ],
     "total_paid": 2500.00,
@@ -106,13 +112,13 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
 ### GET /api/admin/user-balance/:user_id
 
 - **Propósito**: Obtener detalles financieros del usuario
-
 - **Response:**
+
 
   ```json
   {
     "user_id": "uuid",
-    "email": "modelo@sweet.com",
+    "email": "modelo`@sweet.com`",
     "pending_balance": 1500.00,
     "total_earned": 5000.00,
     "total_paid": 3500.00,
@@ -123,7 +129,6 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
 #### 3. Generación de PDF
 
 **Función:** `generate_payout_receipt()`
-
 - Usa librería `printpdf` (ya instalada)
 - Genera recibo simple con:
   - Logo/Título: "SWEET MODELS ENTERPRISE"
@@ -137,47 +142,43 @@ ALTER TABLE users ADD COLUMN pending_balance NUMERIC(12, 2) DEFAULT 0.00;
 - Guarda en `./uploads/receipts/receipt_{uuid}.pdf`
 - Retorna URL: `/uploads/receipts/receipt_xxx.pdf`
 
+
 ### ✅ Frontend (Flutter)
 
 #### 1. Servicio (`payout_service.dart`)
 
 **Clase `PayoutService`:**
-
 - `processPayout()`: Envía solicitud de pago al backend
 - `getPayoutHistory()`: Obtiene historial
 - `getUserBalance()`: Obtiene detalles de balance
 - `cachePayoutHistory()`: Cache offline
 - `getCachedPayoutHistory()`: Recupera cache
-
 **Modelos de Datos:**
-
 - `PayoutResponse`: Respuesta de pago exitoso
 - `PayoutHistoryResponse`: Lista de pagos
 - `PayoutRecord`: Registro individual de pago
 - `UserBalanceResponse`: Detalles financieros
-
 **Riverpod Providers:**
+
 
 ```dart
 payoutServiceProvider          // Singleton del servicio
 userBalanceProvider(userId)    // FutureProvider para balance
 payoutHistoryProvider(userId)  // FutureProvider para historial
 payoutNotifierProvider         // StateNotifier para operaciones
+
 ```
 
 #### 2. UI (`model_profile_screen.dart`)
 
 **Pantalla Principal:**
-
 - Card de saldo con:
   - Saldo pendiente (grande, verde)
   - Total ganado (azul)
   - Total pagado (naranja)
   - Botón "Liquidar Saldo" (solo si balance > 0)
   - Última fecha de pago
-
 **Historial de Pagos:**
-
 - Lista de todos los pagos realizados
 - Card resumen: Total de pagos + monto acumulado
 - Cada pago muestra:
@@ -187,8 +188,8 @@ payoutNotifierProvider         // StateNotifier para operaciones
   - Notas
   - Fecha
   - Botón de recibo (si existe)
-
 **Modal de Liquidación:**
+
 
 ```text
 ┌─────────────────────────────────┐
@@ -210,9 +211,11 @@ payoutNotifierProvider         // StateNotifier para operaciones
 │                                 │
 │ [Cancelar] [Confirmar Pago]    │
 └─────────────────────────────────┘
+
 ```
 
 **Animación de Éxito:**
+
 
 ```text
 ┌─────────────────────────────────┐
@@ -226,6 +229,7 @@ payoutNotifierProvider         // StateNotifier para operaciones
 │         [Cerrar]               │
 └─────────────────────────────────┘
 (Se cierra automáticamente en 3s)
+
 ```
 
 ## 🔄 Flujo Completo
@@ -233,10 +237,12 @@ payoutNotifierProvider         // StateNotifier para operaciones
 ```text
 1. Admin abre perfil de modelo
    ├─> Se carga balance actual
+   ├─> Se carga balance actual
    ├─> Se muestra historial de pagos
    └─> Botón "Liquidar Saldo" visible si balance > 0
 
 2. Admin presiona "Liquidar Saldo"
+   └─> Modal se abre con:
    └─> Modal se abre con:
        ├─> Saldo disponible pre-llenado
        ├─> Campos: Monto, Método, Ref, Notas
@@ -244,16 +250,19 @@ payoutNotifierProvider         // StateNotifier para operaciones
 
 3. Admin completa formulario y confirma
    ├─> Validación frontend (monto > 0, <= balance)
+   ├─> Validación frontend (monto > 0, <= balance)
    ├─> Dialog de "Procesando pago..."
    └─> POST /api/admin/payout
 
 4. Backend procesa (transacción SQL):
+   ├─> Inserta registro en payouts
    ├─> Inserta registro en payouts
    ├─> Actualiza pending_balance en users
    ├─> Genera PDF de recibo
    └─> Retorna confirmación + nueva balance
 
 5. Frontend recibe respuesta:
+   ├─> Cierra dialog de procesamiento
    ├─> Cierra dialog de procesamiento
    ├─> Muestra animación de éxito
    ├─> Actualiza balance (pending_balance = nueva_balance)
@@ -262,8 +271,10 @@ payoutNotifierProvider         // StateNotifier para operaciones
 
 6. Nuevo estado:
    ├─> Saldo pendiente: $0.00 (o reducido)
+   ├─> Saldo pendiente: $0.00 (o reducido)
    ├─> Historial actualizado con nuevo pago
    └─> Recibo PDF disponible para descarga
+
 ```
 
 ## 🎨 Características de UI
@@ -275,6 +286,7 @@ payoutNotifierProvider         // StateNotifier para operaciones
 - ✅ Método de pago requerido
 - ✅ Referencia y notas opcionales
 
+
 ### Feedback Visual
 
 - 🟢 Verde: Saldo pendiente positivo
@@ -284,12 +296,14 @@ payoutNotifierProvider         // StateNotifier para operaciones
 - ✅ Verde: Éxito
 - ❌ Rojo: Errores
 
+
 ### Íconos por Método
 
 - 💰 Binance → Bitcoin (orange)
 - 🏦 Banco → Bank (blue)
 - 💵 Efectivo → Money (green)
 - 📝 Otro → Payment (grey)
+
 
 ### Animaciones
 
@@ -298,21 +312,23 @@ payoutNotifierProvider         // StateNotifier para operaciones
 - Auto-dismiss después de 3 segundos
 - Pull-to-refresh en lista de historial
 
+
 ## 📊 Ejemplo de Datos
 
 ### Antes del Pago
 
 ```text
-Modelo: modelo@sweet.com
+Modelo: modelo`@sweet.com`
 ├─ Saldo Pendiente: $1,500.00
 ├─ Total Ganado: $5,000.00
 └─ Total Pagado: $3,500.00
+
 ```
 
 ### Después del Pago ($500)
 
 ```text
-Modelo: modelo@sweet.com
+Modelo: modelo`@sweet.com`
 ├─ Saldo Pendiente: $1,000.00  ⬅️ REDUCIDO
 ├─ Total Ganado: $5,000.00
 └─ Total Pagado: $4,000.00  ⬅️ INCREMENTADO
@@ -323,9 +339,10 @@ Historial Actualizado:
 │ Ref: TX123456789                    │
 │ Nota: Pago quincenal Diciembre     │
 │ 06/12/2025 10:30                    │
-│ Por: admin@sweet.com                │
+│ Por: admin`@sweet.com`                │
 │ [📄 Ver Recibo]                     │
 └──────────────────────────────────────┘
+
 ```
 
 ## 🔐 Seguridad
@@ -338,12 +355,14 @@ Historial Actualizado:
 - ✅ Auditoría: `created_by` registra quién hizo el pago
 - ✅ Timestamps automáticos
 
+
 ### Frontend
 
 - ✅ Token JWT requerido en headers
 - ✅ Validación de inputs antes de enviar
 - ✅ Manejo de errores con mensajes claros
 - ✅ Cache offline solo de historial (no de operaciones)
+
 
 ## 🧪 Testing
 
@@ -354,11 +373,14 @@ Historial Actualizado:
 ```text
 Given: Modelo con $1,500 pendiente
 When: Admin liquida $500 vía Binance
-Then: 
+Then:
+
   - Saldo nuevo = $1,000
   - Pago registrado en historial
   - PDF generado
   - Balance actualizado en UI
+
+
 ```
 
 #### 2. Saldo Insuficiente
@@ -367,6 +389,7 @@ Then:
 Given: Modelo con $100 pendiente
 When: Admin intenta liquidar $200
 Then: Error "Insufficient balance"
+
 ```
 
 #### 3. Liquidación Total
@@ -375,9 +398,12 @@ Then: Error "Insufficient balance"
 Given: Modelo con $1,500 pendiente
 When: Admin liquida $1,500
 Then:
+
   - Saldo nuevo = $0.00
   - Botón "Liquidar Saldo" se oculta
   - Total pagado = total ganado
+
+
 ```
 
 #### 4. Métodos de Pago
@@ -387,6 +413,7 @@ Then:
 ✅ Banco con número de cuenta
 ✅ Efectivo sin ref
 ✅ Otro con nota personalizada
+
 ```
 
 ## 📁 Archivos Creados
@@ -402,6 +429,7 @@ backend_api/
         ├── Structs: PayoutRequest, PayoutResponse, etc.
         ├── Functions: process_payout(), generate_payout_receipt()
         └─ Routes: /api/admin/payout, /api/admin/payouts
+
 ```
 
 ### Frontend - Archivos
@@ -420,6 +448,7 @@ mobile_app/
             ├── Payout history list
             ├── Liquidation modal
             └── Success animation
+
 ```
 
 ## 🚀 Próximos Pasos
@@ -427,25 +456,19 @@ mobile_app/
 1. **Integrar en Admin Dashboard:**
    - Agregar botón en lista de modelos
    - Link directo a `ModelProfileScreen`
-
 2. **Notificaciones:**
    - Push notification cuando se recibe pago
    - Email con recibo adjunto
-
 3. **Reportes:**
    - Export de payouts a CSV/Excel
    - Gráficas de pagos por mes
-
 4. **Multi-divisa:**
    - Soporte para pagos en COP, USD, BTC
    - Conversión automática
-
 5. **Automatización:**
    - Pagos programados (quincenal/mensual)
    - Auto-liquidación cuando saldo > threshold
-
 ---
-
 **Estado:** ✅ COMPLETADO
 **Fecha:** 06 de Diciembre, 2025
 **Desarrollador:** GitHub Copilot + User

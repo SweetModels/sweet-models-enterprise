@@ -4,32 +4,33 @@
 
 ---
 
+
 ## 1️⃣ PREPARACIÓN PRE-BUILD
 
 ### Actualizar versión en `pubspec.yaml`
 
 **Ubicación:** Línea 19 del archivo `pubspec.yaml`
 
+
 ```yaml
 version: 1.0.0+1
+
 # Formato: MAJOR.MINOR.PATCH+BUILD_NUMBER
+
 ```
 
 **Reglas de versionado semántico:**
-
 - **MAJOR (1.x.x)**: Cambios incompatibles con versiones anteriores
 - **MINOR (x.1.x)**: Nuevas funcionalidades compatibles
 - **PATCH (x.x.1)**: Correcciones de bugs
 - **BUILD (+1)**: Incrementa en cada compilación
-
 **Ejemplos:**
-
 - Primera release pública: `1.0.0+1`
 - Hotfix: `1.0.1+2`
 - Nueva funcionalidad: `1.1.0+3`
 - Breaking changes: `2.0.0+10`
-
 ---
+
 
 ## 2️⃣ BUILD ANDROID (APK/AAB)
 
@@ -37,54 +38,75 @@ version: 1.0.0+1
 
 **⚠️ IMPORTANTE: Guarda el keystore y las contraseñas de forma segura. Sin ellos NO podrás actualizar la app en Google Play.**
 
+
 ```powershell
+
 # Navegar al directorio del proyecto
+
 cd "C:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise\mobile_app\android\app"
 
 # Generar keystore (Java keytool)
+
 keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 
 # Te pedirá:
+
 # 1. Contraseña del keystore (mínimo 6 caracteres) - GUÁRDALA
+
 # 2. Nombre y apellido (puede ser el nombre de tu empresa)
+
 # 3. Unidad organizativa (opcional)
+
 # 4. Organización: Sweet Models Enterprise
+
 # 5. Ciudad: Bogotá (o tu ciudad)
+
 # 6. Departamento: Cundinamarca (o tu región)
+
 # 7. Código país: CO
+
 # 8. Contraseña de la key (puede ser la misma) - GUÁRDALA
+
 ```
 
 **Resultado esperado:**
+
 
 ```texttext
 Generando par de claves RSA de 2048 bits y certificado autofirmado (SHA256withRSA) con una validez de 10000 días
         para: CN=Sweet Models Enterprise, OU=Development, O=Sweet Models, L=Bogotá, ST=Cundinamarca, C=CO
 [Storing upload-keystore.jks]
+
 ```
 
 ### Paso 2: Crear `key.properties`
 
 ```powershell
+
 # Crear archivo key.properties en android/
+
 cd "C:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise\mobile_app\android"
 
 # Crear archivo (PowerShell)
+
 @"
 storePassword=TU_CONTRASEÑA_KEYSTORE
 keyPassword=TU_CONTRASEÑA_KEY
 keyAlias=upload
 storeFile=../app/upload-keystore.jks
 "@ | Out-File -FilePath key.properties -Encoding UTF8
+
 ```
 
 **⚠️ NUNCA subas `key.properties` ni `upload-keystore.jks` a Git.**
+
 
 Verifica que estén en `.gitignore`:
 
 ```gitignore
 android/key.properties
 android/app/upload-keystore.jks
+
 ```
 
 ### Paso 3: Configurar `build.gradle` (Android signing)
@@ -101,7 +123,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     // ... código existente ...
-    
+
     // Agrega esta sección ANTES de buildTypes
     signingConfigs {
         release {
@@ -111,7 +133,7 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-    
+
     buildTypes {
         release {
             signingConfig signingConfigs.release  // 👈 AGREGAR ESTA LÍNEA
@@ -119,55 +141,68 @@ android {
         }
     }
 }
+
 ```
 
 ### Paso 4: Compilar APK Release
 
 ```powershell
+
 # Navegar a mobile_app
+
 cd "C:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise\mobile_app"
 
 # Limpiar builds anteriores
+
 flutter clean
 flutter pub get
 
 # Compilar APK (ARM + ARM64 + x86_64)
+
 flutter build apk --release
 
 # O compilar APK por arquitectura (más ligero)
+
 flutter build apk --release --split-per-abi
+
 ```
 
 **Salida esperada:**
 
+
 ```text
 ✓ Built build\app\outputs\flutter-apk\app-release.apk (18.5MB)
+
 ```
 
 **Si usaste --split-per-abi:**
+
 
 ```text
 ✓ Built build\app\outputs\flutter-apk\app-armeabi-v7a-release.apk (15.2MB)
 ✓ Built build\app\outputs\flutter-apk\app-arm64-v8a-release.apk (16.8MB)
 ✓ Built build\app\outputs\flutter-apk\app-x86_64-release.apk (17.1MB)
+
 ```
 
 ### Paso 5: Compilar AAB (Google Play Store)
 
 ```powershell
+
 # AAB (Android App Bundle) - RECOMENDADO para Play Store
+
 flutter build appbundle --release
 
 # Salida: build\app\outputs\bundle\release\app-release.aab
+
 ```
 
 **Ventajas del AAB:**
-
 - Google Play genera APKs optimizados por dispositivo
 - Reduce tamaño de descarga (~35% menos)
 - Requerido para apps nuevas en Play Store desde 2021
-
 ---
+
 
 ## 3️⃣ BUILD WINDOWS (EXE/MSIX)
 
@@ -176,12 +211,16 @@ flutter build appbundle --release
 #### Paso 1: Instalar herramientas
 
 ```powershell
+
 # Verificar que tengas el SDK de Windows
+
 flutter doctor -v
 
 # Instalar dependencia MSIX
+
 flutter pub add msix
 flutter pub get
+
 ```
 
 #### Paso 2: Configurar `pubspec.yaml`
@@ -198,46 +237,58 @@ msix_config:
   capabilities: internetClient
   languages: en-us, es-co, pt-br
   publisher: CN=Sweet Models Enterprise  # Certificado de firma
+
 ```
 
 #### Paso 3: Compilar MSIX
 
 ```powershell
+
 # Navegar a mobile_app
+
 cd "C:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise\mobile_app"
 
 # Limpiar y compilar
+
 flutter clean
 flutter pub get
 
 # Compilar Windows Release
+
 flutter build windows --release
 
 # Generar MSIX (instalador Microsoft Store)
+
 flutter pub run msix:create
 
 # Salida: build\windows\runner\Release\sweet_models_mobile.msix
+
 ```
 
 **Características del MSIX:**
-
 - ✅ Instalación con un clic
 - ✅ Actualizaciones automáticas
 - ✅ Desinstalación limpia
 - ✅ Compatible con Microsoft Store
 - ✅ Firma digital automática (desarrollo)
 
+
 ### Opción B: Inno Setup (EXE tradicional con asistente)
 
 #### Paso 1: Instalar Inno Setup
 
 ```powershell
+
 # Descargar desde: https://jrsoftware.org/isdl.php
+
 # O con winget:
+
 winget install --id JRSoftware.InnoSetup
 
 # Verificar instalación
-& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /? 
+
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /?
+
 ```
 
 #### Paso 2: Compilar Flutter Windows
@@ -249,9 +300,11 @@ flutter clean
 flutter pub get
 
 # Compilar release
+
 flutter build windows --release
 
 # Archivos en: build\windows\x64\runner\Release\
+
 ```
 
 #### Paso 3: Crear script Inno Setup
@@ -293,19 +346,22 @@ Name: "{group}\Uninstall Sweet Models Enterprise"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{app}\sweet_models_mobile.exe"; Description: "Launch Sweet Models Enterprise"; Flags: nowait postinstall skipifsilent
+
 ```
 
 #### Paso 4: Compilar instalador
 
 ```powershell
+
 # Ejecutar compilador Inno Setup
+
 & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_setup.iss
 
 # Salida: build\windows\installer\SweetModelsEnterprise-Setup-1.0.0.exe (40-60 MB)
+
 ```
 
 **Características del EXE (Inno Setup):**
-
 - ✅ Asistente de instalación profesional
 - ✅ Multi-idioma (EN, ES, PT)
 - ✅ Opción de icono en escritorio
@@ -313,8 +369,8 @@ Filename: "{app}\sweet_models_mobile.exe"; Description: "Launch Sweet Models Ent
 - ✅ Instalación en Program Files
 - ✅ Detección de versión previa
 - ✅ Compresión LZMA2 (~50% reducción)
-
 ---
+
 
 ## 4️⃣ COMANDOS RÁPIDOS (CHEAT SHEET)
 
@@ -324,7 +380,9 @@ Filename: "{app}\sweet_models_mobile.exe"; Description: "Launch Sweet Models Ent
 cd mobile_app
 flutter clean && flutter pub get
 flutter build apk --release --split-per-abi
+
 # Salida: build\app\outputs\flutter-apk\
+
 ```
 
 ### Android AAB (Google Play)
@@ -333,7 +391,9 @@ flutter build apk --release --split-per-abi
 cd mobile_app
 flutter clean && flutter pub get
 flutter build appbundle --release
+
 # Salida: build\app\outputs\bundle\release\app-release.aab
+
 ```
 
 ### Windows MSIX
@@ -343,7 +403,9 @@ cd mobile_app
 flutter clean && flutter pub get
 flutter build windows --release
 flutter pub run msix:create
+
 # Salida: build\windows\runner\Release\*.msix
+
 ```
 
 ### Windows EXE (Inno Setup)
@@ -353,51 +415,75 @@ cd mobile_app
 flutter clean && flutter pub get
 flutter build windows --release
 & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_setup.iss
+
 # Salida: build\windows\installer\*.exe
+
 ```
 
 ---
+
 
 ## 5️⃣ VERIFICACIÓN DE BUILDS
 
 ### Android
 
 ```powershell
+
 # Verificar firma del APK
+
 keytool -printcert -jarfile build\app\outputs\flutter-apk\app-release.apk
 
 # Ver información del APK
+
 # Instala APK Analyzer o usa Android Studio > Build > Analyze APK
+
 ```
 
 ### Windows
 
 ```powershell
+
 # Verificar archivos compilados
+
 dir build\windows\x64\runner\Release\
 
 # Debe contener:
+
 # - sweet_models_mobile.exe
+
 # - data\*
+
 # - flutter_windows.dll
+
 # - Archivos .dll de plugins
+
 ```
 
 ---
 
+
 ## 6️⃣ TAMAÑOS ESPERADOS
 
 | Build | Tamaño aproximado |
+
 |-------|-------------------|
+
 | APK (universal) | 18-25 MB |
+
 | APK (arm64-v8a) | 16-18 MB |
+
 | APK (armeabi-v7a) | 15-17 MB |
+
 | AAB | 17-20 MB |
+
 | Windows MSIX | 35-45 MB |
+
 | Windows EXE (Inno) | 40-60 MB |
+
 | Windows portable | 50-70 MB |
 
 ---
+
 
 ## 7️⃣ DISTRIBUCIÓN
 
@@ -408,13 +494,14 @@ dir build\windows\x64\runner\Release\
 - **Firebase App Distribution**: Para beta testers
 - **APKPure/APKMirror**: Distribución alternativa
 
+
 ### Plataforma Windows
 
 - **MSIX**: Microsoft Store o instalación local
 - **EXE**: Hosting en web, GitHub Releases, OneDrive
 - **Portable**: Carpeta Release\ zipeada (sin instalador)
-
 ---
+
 
 ## 8️⃣ SEGURIDAD Y BACKUPS
 
@@ -428,16 +515,21 @@ dir build\windows\x64\runner\Release\
 └── signing_certificate.pem           (para Windows firmado)
 
 🔒 ALMACENAMIENTO RECOMENDADO:
+
 - Password manager (1Password, Bitwarden)
 - Bóveda cifrada (VeraCrypt)
 - USB cifrado (offline backup)
 - Azure Key Vault / AWS Secrets Manager (empresas)
+
+
 ```
 
 ### Crear backup de credenciales
 
 ```powershell
+
 # Crear archivo de backup de credenciales
+
 cd "C:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise\mobile_app"
 
 @"
@@ -447,6 +539,7 @@ SWEET MODELS ENTERPRISE - CREDENTIALS
 
 ANDROID KEYSTORE:
 -----------------
+Archivo: upload-keystore.jks
 Archivo: upload-keystore.jks
 Ubicación: android/app/upload-keystore.jks
 Alias: upload
@@ -458,6 +551,7 @@ Algoritmo: RSA 2048 bits
 WINDOWS SIGNING:
 ----------------
 Certificado: [Si aplica]
+Certificado: [Si aplica]
 Thumbprint: [Si aplica]
 
 NOTAS:
@@ -467,23 +561,30 @@ NOTAS:
 - Guardar en 3 lugares seguros diferentes
 - No compartir públicamente
 
+
 ===============================
 "@ | Out-File -FilePath KEYSTORE_BACKUP_CREDENTIALS.txt -Encoding UTF8
 
 Write-Host "✅ Archivo de backup creado: KEYSTORE_BACKUP_CREDENTIALS.txt"
 Write-Host "⚠️  COMPLETA LAS CONTRASEÑAS Y GUÁRDALO DE FORMA SEGURA"
+
 ```
 
 ---
+
 
 ## 9️⃣ TROUBLESHOOTING
 
 ### Error: "keytool no reconocido"
 
 ```powershell
+
 # Agregar Java al PATH
+
 $env:Path += ";C:\Program Files\Java\jdk-17\bin"
+
 # O instalar Java JDK desde adoptium.net
+
 ```
 
 ### Error: "Gradle build failed"
@@ -495,26 +596,35 @@ cd ..
 flutter clean
 flutter pub get
 flutter build apk --release
+
 ```
 
 ### Error: MSIX firma inválida
 
 ```powershell
+
 # En desarrollo, Windows acepta certificados autofirmados
+
 # Para producción, comprar certificado de firma de código
+
 ```
 
 ### APK muy grande
 
 ```powershell
+
 # Usar split-per-abi (reduce ~30%)
+
 flutter build apk --release --split-per-abi
 
 # Analizar qué ocupa espacio
+
 flutter build apk --analyze-size
+
 ```
 
 ---
+
 
 ## 🎯 CHECKLIST FINAL
 
@@ -535,7 +645,5 @@ Antes de distribuir, verifica:
 - [ ] CHANGELOG.md creado con cambios
 - [ ] Tag de Git creado (`git tag v1.0.0`)
 - [ ] Build subido a GitHub Releases
-
 ---
-
 **¡Listo para compilar! Ejecuta los comandos según tu plataforma objetivo.** 🚀

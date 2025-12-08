@@ -1,23 +1,15 @@
 # ============================================
-# ETAPA 1: BUILDER - Compilación con Rust
+# ETAPA 1: BUILDER - Compilación con Rust (nightly para edition2024 en deps)
 # ============================================
-FROM rust:1.84-alpine AS builder
+FROM rustlang/rust:nightly-alpine AS builder
 
 WORKDIR /app
 
 # Instalar dependencias de compilación para Alpine
 RUN apk add --no-cache musl-dev openssl-dev pkgconfig
 
-# Copiar manifiestos para cachear dependencias
+# Copiar manifiestos y código
 COPY Cargo.toml Cargo.lock ./
-
-# Crear estructura dummy para cachear dependencias
-RUN mkdir src && \
-    echo "fn main() {println!(\"dummy\");}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copiar código real y migraciones
 COPY src ./src
 COPY migrations ./migrations
 

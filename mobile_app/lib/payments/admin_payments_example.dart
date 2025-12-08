@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'payments/user_profile_screen.dart';
+import 'user_profile_screen.dart';
 
 class AdminPaymentsExample extends StatelessWidget {
-  const AdminPaymentsExample({Key? key}) : super(key: key);
+  const AdminPaymentsExample({super.key});
 
   @override
   Widget build(BuildContext context) {
     // Ejemplo: token y userId del usuario admin
-    const String adminToken = "your_admin_jwt_token_here";
-    const String userId = "model_user_id_uuid_here";
+    const String adminToken = 'your_admin_jwt_token_here';
+    const String userId = 'model_user_id_uuid_here';
 
     return UserProfileScreen(
       userId: userId,

@@ -3,6 +3,7 @@
 ## 🏗️ Estructura del Proyecto
 
 ```
+
 mobile_app/
 ├── lib/
 │   ├── main.dart                           [ACTUALIZADO]
@@ -28,13 +29,16 @@ mobile_app/
 ├── QUICK_REFERENCE.md                      [NUEVO]
 ├── FLUTTER_INTEGRATION_GUIDE.md            [EXISTENTE]
 └── ARCHITECTURE_VISUAL.md                  [ESTE ARCHIVO]
+
 ```
 
 ---
 
+
 ## 🎯 Flujo de Navegación Completo
 
 ```
+
                             ┌─────────────────────────┐
                             │   Sweet Models App      │
                             │      Main.dart          │
@@ -102,7 +106,7 @@ mobile_app/
                      └───────────────────────────┘
 
     ADICIONALMENTE (desde Dashboard para Admin):
-    
+
          ┌───────────────────────────────────────┐
          │  /cctv_grid (NUEVO)                   │
          │  🎯 CCTV_GRID_SCREEN                 │
@@ -111,13 +115,16 @@ mobile_app/
          ├─ Estadísticas en tiempo real         │
          ├─ Fullscreen modal al tap             │
          └───────────────────────────────────────┘
+
 ```
 
 ---
 
+
 ## 📱 Arquitectura de Pantallas
 
 ```
+
 ╔════════════════════════════════════════════════════════════════╗
 ║                   OTP VERIFICATION SCREEN                       ║
 ╠════════════════════════════════════════════════════════════════╣
@@ -187,13 +194,16 @@ mobile_app/
 ║  └──────────────────────────────────────────────────┘        ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
+
 ```
 
 ---
 
+
 ## 🔄 State Management
 
 ```
+
 RegisterModelScreenAdvanced
     │
     ├─ _currentStep: int (0-3)
@@ -224,16 +234,19 @@ RegisterModelScreenAdvanced
         ├─ _phoneController
         ├─ _bankNameController
         └─ _accountNumberController
+
 ```
 
 ---
 
+
 ## 🔌 Integración de APIs
 
 ```
+
 ┌─────────────────────────────┐
 │   API Backend               │
-│   (http://localhost:3000)   │
+│   (`http://localhost:3000`)   │
 └────────┬────────────────────┘
          │
     ┌────┴─────────────────────────────────────────────┐
@@ -281,13 +294,16 @@ RegisterModelScreenAdvanced
 │  - CctvGridScreen (on init)                                  │
 │  - Dashboard (refresh)                                       │
 └──────────────────────────────────────────────────────────────┘
+
 ```
 
 ---
 
+
 ## 📊 Base de Datos - Tablas Relacionadas
 
 ```
+
 ┌─────────────────┐
 │     USERS       │
 ├─────────────────┤
@@ -339,13 +355,16 @@ RegisterModelScreenAdvanced
 │ created_at      │
 │ updated_at      │
 └─────────────────┘
+
 ```
 
 ---
 
+
 ## 🎨 Componentes Reutilizables
 
 ```
+
 AppBar (personalizado en cada screen)
 ├─ Título dinámico
 ├─ Icono de retroceso
@@ -370,13 +389,16 @@ Progress (IndexedStack + TabController)
 ├─ Indicadores de paso
 ├─ Animaciones suaves
 └─ Navegación bidireccional
+
 ```
 
 ---
 
+
 ## ⚡ Flujo de Datos
 
 ```
+
 User Input
     │
     ▼
@@ -413,13 +435,16 @@ Screen
     │
     ▼
 User sees result
+
 ```
 
 ---
 
+
 ## 📈 Matriz de Dependencias
 
 ```
+
 main.dart
     ├─ login_screen.dart
     ├─ dashboard_screen.dart
@@ -439,14 +464,17 @@ main.dart
 api_service.dart (core)
     ├─ dio (HTTP client)
     ├─ shared_preferences (storage)
-    └─ Backend (http://localhost:3000)
+    └─ Backend (`http://localhost:3000`)
+
 ```
 
 ---
 
+
 ## 🚀 Deployment Flow
 
 ```
+
 ┌──────────────────┐
 │  Source Code     │
 │  (git repo)      │
@@ -470,13 +498,16 @@ api_service.dart (core)
         │  - Web            │
         │  - Instalador     │
         └───────────────────┘
+
 ```
 
 ---
 
+
 ## ✅ Checklist de Implementación
 
 ```
+
 ARQUITECTURA COMPLETADA:
 ────────────────────────
 ✅ OtpVerificationScreen (330 LOC)
@@ -505,10 +536,10 @@ FUNCIONALIDADES:
 ✅ Integraciones API
 ✅ Manejo de errores
 ✅ Estados de carga
+
 ```
 
 ---
-
 *Última actualización: 4 de Diciembre, 2025*
 *Versión: 1.0.0*
 *Estado: ✅ LISTO PARA PRODUCCIÓN*

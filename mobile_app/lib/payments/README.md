@@ -14,6 +14,7 @@ Sistema completo de liquidación de pagos para modelos con integración backend 
   - `fetchHistory()`: Obtiene historial de pagos
   - `processPayout()`: Registra un nuevo pago en backend
 
+
 ### 2. `payout_dialog.dart`
 
 - **Responsabilidad**: BottomSheet modal para realizar pagos
@@ -23,6 +24,7 @@ Sistema completo de liquidación de pagos para modelos con integración backend 
   - Campo referencia/TXID
   - Animación Lottie de éxito
 
+
 ### 3. `user_profile_screen.dart`
 
 - **Responsabilidad**: Pantalla principal de perfil de modelo (Admin)
@@ -31,15 +33,18 @@ Sistema completo de liquidación de pagos para modelos con integración backend 
   - Botón "💸 LIQUIDAR PAGO"
   - Tabs: "Datos" e "Historial de Pagos"
 
+
 ### 4. `payout_history_screen.dart`
 
 - **Responsabilidad**: Pantalla dedicada al historial de transacciones
 - **Datos mostrados**: Fecha, Monto, Método, Referencia, Admin que procesó
 
+
 ### 5. `admin_payments_example.dart`
 
 - **Responsabilidad**: Ejemplo de integración
 - **Uso**: Reemplaza `userId` y `adminToken` con valores reales
+
 
 ## Integración en tu App
 
@@ -62,6 +67,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 ```
 
 ## Endpoints Backend Requeridos
@@ -71,21 +77,24 @@ class MyApp extends StatelessWidget {
 **Headers**: `Authorization: Bearer {token}`
 **Response**:
 
+
 ```json
 {
   "user_id": "uuid",
-  "email": "model@example.com",
+  "email": "model`@example.com`",
   "total_earned": 1000.0,
   "total_paid": 200.0,
   "pending_balance": 800.0,
   "last_payout_date": "2025-12-05T10:30:00Z"
 }
+
 ```
 
 ### 2. GET `/api/admin/payouts/{user_id}`
 
 **Headers**: `Authorization: Bearer {token}`
 **Response**:
+
 
 ```json
 {
@@ -97,12 +106,13 @@ class MyApp extends StatelessWidget {
       "reference_id": "REF123",
       "notes": null,
       "created_at": "2025-12-05T10:30:00Z",
-      "processed_by_email": "admin@example.com"
+      "processed_by_email": "admin`@example.com`"
     }
   ],
   "total_paid": 200.0,
   "total_count": 2
 }
+
 ```
 
 ### 3. POST `/api/admin/payout`
@@ -114,6 +124,7 @@ class MyApp extends StatelessWidget {
 
 **Body**:
 
+
 ```json
 {
   "user_id": "uuid",
@@ -122,9 +133,11 @@ class MyApp extends StatelessWidget {
   "reference_id": "REF123",
   "notes": "Pago mensual"
 }
+
 ```
 
 **Response** (201 Created):
+
 
 ```json
 {
@@ -137,6 +150,7 @@ class MyApp extends StatelessWidget {
   "message": "Payout registered successfully",
   "created_at": "2025-12-06T10:30:00Z"
 }
+
 ```
 
 ## Flujo de Uso
@@ -145,26 +159,25 @@ class MyApp extends StatelessWidget {
    - Se carga `UserProfileScreen`
    - `PaymentsProvider.fetchBalance()` obtiene saldo
    - Se muestra card con saldo pendiente
-
 2. **Admin toca "💸 LIQUIDAR PAGO"**
    - Se abre `PayoutDialog` en BottomSheet
    - Muestra saldo actual
    - Admin ingresa monto, método y referencia
-
 3. **Admin confirma transacción**
    - `PaymentsProvider.processPayout()` envía POST al backend
    - Backend valida y registra pago
    - Si OK: animación Lottie verde ✓
    - Saldo se actualiza automáticamente
-
 4. **Historial visible en pestaña**
    - Lista de pagos anteriores con detalles
    - Sin necesidad de recargar la app
+
 
 ## Assets Requeridos
 
 - `assets/lottie/success_check.json` (Animación Lottie de check verde)
 - Registrada en `pubspec.yaml`:
+
 
   ```yaml
   flutter:
@@ -178,6 +191,7 @@ class MyApp extends StatelessWidget {
 provider: ^6.0.0           # State management
 http: ^1.6.0               # HTTP client
 lottie: ^2.7.0             # Animaciones
+
 ```
 
 ## Notas de Seguridad
@@ -187,6 +201,7 @@ lottie: ^2.7.0             # Animaciones
 - ✅ Solo admins pueden procesar pagos
 - ✅ Auditoria: Se registra processed_by (admin UUID)
 
+
 ## Testing
 
 Para probar localmente:
@@ -194,16 +209,15 @@ Para probar localmente:
 1. Obtén un token admin:
 
    ```bash
-   curl -X POST http://localhost:3000/login \
+   curl -X POST `http://localhost:3000/login` \
      -H "Content-Type: application/json" \
-     -d '{"email":"admin@example.com","password":"password"}'
+     -d '{"email":"admin`@example.com`","password":"password"}'
    ```
 
 2. Copia el `access_token` en `admin_payments_example.dart`
-
 3. Obtén un UUID de modelo y reemplázalo en el mismo archivo
-
 4. Ejecuta:
+
 
    ```bash
    flutter run

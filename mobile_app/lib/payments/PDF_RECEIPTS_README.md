@@ -12,6 +12,7 @@ El módulo de recibos PDF permite generar, compartir y descargar comprobantes pr
 - Detalles bancarios (opcional)
 - Timestamp de la transacción
 
+
 ## 📦 Dependencias Requeridas
 
 ```yaml
@@ -20,6 +21,7 @@ dependencies:
   pdf: ^3.10.0
   printing: ^5.11.0
   share_plus: ^7.2.0
+
 ```
 
 ### Instalación
@@ -27,6 +29,7 @@ dependencies:
 ```bash
 cd mobile_app
 flutter pub get
+
 ```
 
 ## 🔧 Estructura del Código
@@ -42,9 +45,10 @@ PayoutReceipt(
   date: DateTime.now(),
   paymentMethod: 'Binance',
   transactionId: 'TXN-2025-12-06-001',
-  processedBy: 'admin@sweetmodels.com',
+  processedBy: 'admin`@sweetmodels.com`',
   bankDetails: 'Binance: bnb1abc123...', // Opcional
 )
+
 ```
 
 ### 2. Clase `PdfReceiptService`
@@ -59,6 +63,7 @@ Genera el PDF y retorna los bytes.
 
 ```dart
 final pdfBytes = await PdfReceiptService.generateReceipt(receipt);
+
 ```
 
 ##### `shareReceipt(PayoutReceipt receipt) → Future<void>`
@@ -67,6 +72,7 @@ Abre el diálogo nativo de compartir (WhatsApp, correo, guardar, etc.)
 
 ```dart
 await PdfReceiptService.shareReceipt(receipt);
+
 ```
 
 ##### `downloadReceipt(PayoutReceipt receipt) → Future<void>`
@@ -75,6 +81,7 @@ Descarga el PDF al almacenamiento del dispositivo.
 
 ```dart
 await PdfReceiptService.downloadReceipt(receipt);
+
 ```
 
 ##### `printReceipt(PayoutReceipt receipt) → Future<void>`
@@ -83,6 +90,7 @@ Abre el visor de impresión nativa.
 
 ```dart
 await PdfReceiptService.printReceipt(receipt);
+
 ```
 
 ### 3. Widget `ReceiptDownloadWidget`
@@ -99,23 +107,23 @@ import 'package:sweet_models_mobile/widgets/receipt_download_widget.dart';
 class PayoutDialog extends StatelessWidget {
   final String modelName;
   final double amount;
-  
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       child: Column(
         children: [
           // ... Resto del contenido del diálogo ...
-          
+
           SizedBox(height: 20),
-          
+
           // Agregar widget de recibo
           ReceiptDownloadWidget(
             modelName: modelName,
             amount: amount,
             paymentMethod: 'Binance', // Cambiar según el método
             transactionId: 'TXN-2025-12-06-001',
-            processedBy: 'admin@sweetmodels.com',
+            processedBy: 'admin`@sweetmodels.com`',
             bankDetails: 'Binance: bnb1abc123...',
           ),
         ],
@@ -123,6 +131,7 @@ class PayoutDialog extends StatelessWidget {
     );
   }
 }
+
 ```
 
 ### Ejemplo 2: Integración en `PayoutHistoryScreen`
@@ -143,11 +152,12 @@ ListTile(
         transactionId: payout['payout_id'],
         processedBy: payout['processed_by'],
       );
-      
+
       await PdfReceiptService.shareReceipt(receipt);
     },
   ),
 )
+
 ```
 
 ## 🎨 Diseño del PDF
@@ -181,6 +191,7 @@ El PDF generado tiene la siguiente estructura:
 │  Este es un comprobante digital     │
 │  válido.                            │
 └─────────────────────────────────────┘
+
 ```
 
 ## 🔐 Permisos Requeridos
@@ -191,6 +202,7 @@ El PDF generado tiene la siguiente estructura:
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
 ```
 
 ### iOS (`ios/Runner/Info.plist`)
@@ -200,6 +212,7 @@ El PDF generado tiene la siguiente estructura:
 <string>Necesitamos acceso a tu galería para guardar recibos</string>
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>Necesitamos acceso para guardar recibos</string>
+
 ```
 
 ## 💡 Casos de Uso
@@ -217,10 +230,11 @@ if (payoutResponse.success) {
     transactionId: payoutResponse.payoutId,
     processedBy: currentUser.email,
   );
-  
+
   // Compartir automáticamente
   await PdfReceiptService.shareReceipt(receipt);
 }
+
 ```
 
 ### 2. Botón "Descargar Recibo" en Historial
@@ -233,6 +247,7 @@ ElevatedButton(
   },
   child: Text('📄 Descargar Recibo'),
 )
+
 ```
 
 ### 3. Enviar Recibo por Correo (Integration Custom)
@@ -241,7 +256,7 @@ ElevatedButton(
 // Extender el servicio para enviar por correo
 Future<void> emailReceipt(PayoutReceipt receipt, String toEmail) async {
   final pdfData = await PdfReceiptService.generateReceipt(receipt);
-  
+
   // Integrar con servicio de correo (ej: SendGrid, Mailgun)
   await mailService.sendEmail(
     to: toEmail,
@@ -255,6 +270,7 @@ Future<void> emailReceipt(PayoutReceipt receipt, String toEmail) async {
     ],
   );
 }
+
 ```
 
 ## 🐛 Troubleshooting
@@ -263,13 +279,16 @@ Future<void> emailReceipt(PayoutReceipt receipt, String toEmail) async {
 
 - Solución: Asegurate de que el plugin esté instalado: `flutter pub get`
 
+
 ### PDF vacío o sin estilos
 
 - Solución: Verificar que las fuentes de Google están disponibles (conexión a internet)
 
+
 ### No funciona compartir en Android
 
 - Solución: Verificar permisos en `AndroidManifest.xml`
+
 
 ## 📊 Próximas Mejoras
 
@@ -279,6 +298,7 @@ Future<void> emailReceipt(PayoutReceipt receipt, String toEmail) async {
 - Firma digital del administrador
 - Reporte consolidado de pagos en PDF
 
+
 ## 📞 Soporte
 
-Para preguntas o problemas, contacta a: <dev@sweetmodels.com>
+Para preguntas o problemas, contacta a: <dev`@sweetmodels.com`>

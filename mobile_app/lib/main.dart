@@ -20,7 +20,13 @@ import 'screens/admin_stats_screen.dart';
 import 'screens/model_home_screen.dart';
 import 'screens/contract_screen.dart';
 import 'screens/moderator_console_screen.dart';
+import 'services/web3_service.dart';
+import 'services/grpc_client.dart';
 // import 'package:media_kit/media_kit.dart'; // Temporalmente deshabilitado
+
+// Providers Riverpod
+final web3ServiceProvider = ChangeNotifierProvider<Web3Service>((ref) => Web3Service());
+final grpcClientProvider = ChangeNotifierProvider<GrpcClient>((ref) => GrpcClient());
 
 void main() {
   // Inicializar media_kit para reproducción de video
