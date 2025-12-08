@@ -472,7 +472,7 @@ async fn save_message(db: &PgPool, message: &Message) -> Result<(), SocialError>
         message.content,
         message.timestamp,
         message.read,
-        message.message_type as MessageType,
+        message.message_type.clone() as MessageType,
     )
     .execute(db)
     .await
