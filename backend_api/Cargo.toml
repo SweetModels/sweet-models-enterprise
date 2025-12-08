@@ -41,3 +41,9 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 deadpool-redis = "0.14"
 pdf_lib = { package = "printpdf", version = "0.7" }
+
+# WebSockets & Social
+dashmap = "5.5"
+futures-util = "0.3"
+base64 = "0.21"
+thiserror = "1.0"
