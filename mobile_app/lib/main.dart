@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'api_service.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'theme/app_theme.dart';
 import 'dashboard_screen.dart';
 import 'register_screen.dart';
 import 'groups_screen.dart';
 import 'financial_planning_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import 'screens/login_screen_shadcn.dart';
 import 'register_model_screen.dart';
 import 'camera_monitor_screen.dart';
 import 'otp_verification_screen.dart';
@@ -49,41 +50,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ShadApp.material(
       title: 'Sweet Models Enterprise',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0A0E21),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFEB1555),
-          secondary: Color(0xFF00D4FF),
-          surface: Color(0xFF1D1E33),
-          error: Color(0xFFFF3B30),
-          onPrimary: Color(0xFFFFFFFF),
-          onSecondary: Color(0xFF000000),
-          onSurface: Color(0xFFFFFFFF),
-        ),
-        textTheme: GoogleFonts.interTextTheme(
-          ThemeData(brightness: Brightness.dark).textTheme,
-        ),
-        cardTheme: CardTheme(
-          elevation: 8,
-          color: const Color(0xFF1D1E33),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1D1E33),
-          elevation: 0,
-          centerTitle: true,
-        ),
+      
+      // 🎨 Shadcn Theme Configuration
+      themeMode: ThemeMode.dark,
+      theme: ShadThemeData(
+        brightness: Brightness.light,
+        colorScheme: const ShadZincColorScheme.light(),
       ),
+      darkTheme: AppTheme.shadcnTheme,
+      
+      // 📱 Material Theme Fallback
+      materialThemeBuilder: (context, theme) => AppTheme.materialTheme,
+      
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginScreen(),
+        '/': (context) => const LoginScreenShadcn(), // 🎨 Nueva pantalla Shadcn
+        '/login': (context) => const LoginScreen(),   // Pantalla original (fallback)
         '/dashboard': (context) => const DashboardScreen(),
         '/register': (context) => const RegisterScreen(),
         '/register_model': (context) => const RegisterModelScreen(),

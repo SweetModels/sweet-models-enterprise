@@ -1,28 +1,48 @@
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+mod ai;
+
+use std::{net::SocketAddr, sync::Arc, time::Duration, io};
 
 use axum::{routing::{get, post}, body::Bytes, Json, Router};
 use deadpool_redis::redis::AsyncCommands;
 use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
-use tokio::{signal, task::JoinHandle, time::interval};
+use tokio::{signal, task::JoinHandle, time::interval, sync::broadcast};
+use tokio::net::TcpListener;
 use tonic::transport::Server;
 use tower_http::cors::{Any, CorsLayer};
+use tracing_subscriber::fmt::writer::MakeWriterExt;
 
-use backend_api::{
-    finance::handlers::{
-        seal_transaction_handler,
-        verify_chain_handler,
-        user_transaction_history_handler,
-    },
-    state::AppState,
+use backend_api::finance::handlers::{
+    seal_transaction_handler,
+    verify_chain_handler,
+    user_transaction_history_handler,
 };
+use backend_api::state::AppState;
+use backend_api::social;
+use backend_api::auth;
+use backend_api::config;
+use backend_api::tls::TlsConfiguration;
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;
-
 #[tokio::main]
 async fn main() -> Result<(), DynError> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt().with_target(false).init();
+
+    // Validate environment variables before starting
+    config::validate_environment();
+
+    let file = std::fs::File::create("errors.log").unwrap_or_else(|_| {
+        std::fs::File::create("phoenix_errors.log").expect("No se pudo crear errors.log")
+    });
+    let subscriber = tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(io::stdout.and(file))
+        .finish();
+    let _ = tracing::subscriber::set_global_default(subscriber);
+
+    tokio::spawn(async {
+        ai::phoenix::start_sentinel().await;
+    });
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
@@ -40,9 +60,12 @@ async fn main() -> Result<(), DynError> {
 
     let state = Arc::new(AppState { db, redis, nats });
 
+    let (tx, _rx) = broadcast::channel(100);
+    let chat_state = Arc::new(social::ChatState { tx });
+
     let (shutdown_tx, _) = tokio::sync::broadcast::channel::<()>(1);
 
-    let http_handle = spawn_http_server(state.clone(), shutdown_tx.subscribe());
+    let http_handle = spawn_http_server(state.clone(), chat_state.clone(), shutdown_tx.subscribe());
     let grpc_handle = spawn_grpc_server(state.clone(), shutdown_tx.subscribe());
     let ledger_handle = spawn_ledger_worker(state.clone(), shutdown_tx.subscribe());
 
@@ -70,19 +93,48 @@ async fn main() -> Result<(), DynError> {
 
 fn spawn_http_server(
     state: Arc<AppState>,
+    chat_state: Arc<social::ChatState>,
     mut shutdown: tokio::sync::broadcast::Receiver<()>,
 ) -> JoinHandle<Result<(), DynError>> {
     tokio::spawn(async move {
+        let zk_router = auth::zk::router(state.clone());
+
         let app = Router::new()
             .route("/health", get(health_handler))
             .route("/api/ledger/seal", post(seal_transaction_handler))
             .route("/api/ledger/verify", get(verify_chain_handler))
             .route("/api/ledger/history/:user_id", get(user_transaction_history_handler))
+            .nest("/api/chat", social::social_routes().with_state(chat_state))
+            .nest("/api/web3", auth::web3::web3_routes())
+            .nest("/api/zk", zk_router)
             .layer(CorsLayer::new().allow_origin(Any).allow_headers(Any).allow_methods(Any))
             .with_state(state);
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-        tracing::info!(" HTTP/WebSocket server escuchando en 0.0.0.0:3000");
+        let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 3000));
+
+        // Check for TLS configuration
+        if let Some(tls_config) = TlsConfiguration::from_env() {
+            match tls_config.build_config() {
+                Ok(_server_config) => {
+                    tracing::info!("🔒 TLS configuration loaded successfully");
+                    tracing::warn!("⚠️  HTTPS support requires axum 0.8+ with proper hyper integration");
+                    tracing::warn!("   Falling back to HTTP for now. TLS infrastructure is ready for upgrade.");
+                    backend_api::tls::print_dev_cert_instructions();
+                }
+                Err(e) => {
+                    tracing::warn!("❌ Failed to load TLS config: {}", e);
+                    tracing::warn!("⚠️  Falling back to HTTP (insecure)");
+                    backend_api::tls::print_dev_cert_instructions();
+                }
+            }
+        } else {
+            tracing::info!("ℹ️  TLS not configured (TLS_CERT_PATH/TLS_KEY_PATH not set)");
+            tracing::info!("   Running in HTTP mode (not recommended for production)");
+        }
+
+        // HTTP server (TLS requires additional dependencies/configuration)
+        let listener = TcpListener::bind(addr).await?;
+        tracing::info!("🌐 HTTP/WebSocket server escuchando en http://0.0.0.0:3000");
 
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {

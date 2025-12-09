@@ -161,7 +161,7 @@ pub async fn verify_chain_integrity(pool: &PgPool) -> Result<bool, Box<dyn std::
 
         // Validar que el hash del bloque sea correcto
         let data_str = serde_json::to_string(&data).unwrap_or_default();
-        let calculated_hash = Block::calculate_hash(&id.to_string(), &prev_hash, &data_str, *nonce as u64);
+        let calculated_hash = Block::calculate_hash(&id.to_string(), prev_hash, &data_str, *nonce as u64);
         if calculated_hash != *hash {
             tracing::warn!(
                 "❌ Hash inválido en bloque {}: esperado {}, obtenido {}",
@@ -213,6 +213,7 @@ pub async fn get_user_transaction_history(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_block_creation_and_validation() {
@@ -228,9 +229,28 @@ mod tests {
 
     #[test]
     fn test_block_hash_consistency() {
+        use chrono::Utc;
+        
         let data = json!({"test": "data"});
-        let block1 = Block::new("prev_hash_1".to_string(), data.clone(), 100);
-        let block2 = Block::new("prev_hash_1".to_string(), data, 100);
+        let nonce = 100u64;
+        let id = Uuid::new_v4();
+        let now = Utc::now();
+        let block1 = Block {
+            id,
+            prev_hash: "prev_hash_1".to_string(),
+            data: data.clone(),
+            nonce,
+            hash: String::new(),
+            timestamp: now,
+        };
+        let block2 = Block {
+            id,
+            prev_hash: "prev_hash_1".to_string(),
+            data: data.clone(),
+            nonce,
+            hash: String::new(),
+            timestamp: now,
+        };
 
         assert_eq!(block1.hash, block2.hash, "Bloques idénticos deben tener el mismo hash");
     }

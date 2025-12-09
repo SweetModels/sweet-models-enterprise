@@ -51,6 +51,7 @@ dependencies:
   
   # Storage
   shared_preferences: ^2.2.0
+  url_launcher: ^6.3.0
   
   # Biometric authentication
   local_auth: ^2.3.0
@@ -63,6 +64,7 @@ dependencies:
   
   # UI Components
   cupertino_icons: ^1.0.8
+  shadcn_ui: 0.16.3
   
   # Navigation
   go_router: ^15.1.2
@@ -100,6 +102,7 @@ dependencies:
   
   # 🌐 Web3 Integration
   web3dart: ^2.7.1
+  walletconnect_dart: ^0.0.11
   walletconnect_flutter_v2: ^2.0.14
   convert: ^3.1.1
   pointycastle: ^3.7.3
@@ -109,7 +112,8 @@ dependencies:
   
   # 💬 Chat UI
   flutter_chat_ui: ^1.6.13
-  uuid: ^4.0.0
+  uuid: ^3.0.7
+  web_socket_channel: ^2.4.4
   
   # Internationalization
   flutter_localizations:
@@ -188,3 +192,4 @@ dependency_overrides:
   image_picker_android: 0.8.8
   media_kit_video: 1.2.1
   screen_brightness_android: any
+  web: ^1.0.0

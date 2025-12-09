@@ -195,7 +195,6 @@
 └─────────────────────────────────────────────────────────────────────────┘
 */
 
-
 // ============================================================================
 // ARCHIVOS GENERADOS
 // ============================================================================
@@ -212,7 +211,6 @@ migrations/
 LEDGER_DOCUMENTATION.md        ← Documentación completa
 LEDGER_EXAMPLES.sql            ← Ejemplos de queries SQL
 */
-
 
 // ============================================================================
 // COMPILACIÓN Y TESTS
@@ -242,7 +240,6 @@ Ejemplos de uso en código:
   println!("Transacción sellada: {}", block.hash);
 */
 
-
 // ============================================================================
 // INTEGRACIÓN EN MAIN.RS
 // ============================================================================
@@ -263,7 +260,6 @@ let app = Router::new()
     .with_state(pool);
 */
 
-
 // ============================================================================
 // CUMPLIMIENTO REGULATORIO
 // ============================================================================
@@ -274,13 +270,11 @@ let app = Router::new()
 - Registro inmutable de transacciones en criptoactivos
 - Auditoría completa
 
-
 ✅ FATF (Financial Action Task Force)
 
 - Anti-Money Laundering (AML)
 - Know Your Customer (KYC)
 - Trazabilidad completa de fondos
-
 
 ✅ ISO/IEC 27001
 
@@ -288,13 +282,11 @@ let app = Router::new()
 - Auditoría de acceso
 - No repudio
 
-
 ✅ SOX (Sarbanes-Oxley)
 
 - Integridad de registros financieros
 - Control interno certifiable
 */
-
 
 // ============================================================================
 // FIN DE DOCUMENTACIÓN

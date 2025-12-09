@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'biometric_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/web3_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -15,8 +16,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _biometricService = BiometricService();
+  final _web3Service = Web3Service();
 
   bool _isLoading = false;
+  bool _isWeb3Loading = false;
   bool _obscurePassword = true;
   bool _biometricAvailable = false;
   String _biometricType = '';
@@ -48,6 +51,40 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _attemptBiometricLogin() async {
     // DESHABILITADO - flutter_secure_storage no configurado en Windows
     return;
+  }
+
+  Future<void> _loginWithWeb3() async {
+    setState(() => _isWeb3Loading = true);
+    try {
+      final address = await _web3Service.connectWallet();
+      if (!mounted) return;
+      setState(() => _isWeb3Loading = false);
+
+      if (address != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Wallet conectada: $address'),
+            backgroundColor: const Color(0xFF0B84FF),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo conectar la wallet'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isWeb3Loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error Web3: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _login() async {
@@ -282,6 +319,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
+                                  ),
+                                ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        OutlinedButton.icon(
+                          onPressed: _isWeb3Loading ? null : _loginWithWeb3,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF0B84FF)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.account_balance_wallet, color: Color(0xFF0B84FF)),
+                          label: _isWeb3Loading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0B84FF)),
+                                  ),
+                                )
+                              : const Text(
+                                  'Acceder con Web3 Wallet',
+                                  style: TextStyle(
+                                    color: Color(0xFF0B84FF),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                         ),

@@ -109,7 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: const Text('Wallet Status', style: TextStyle(color: Colors.white)),
             subtitle: Text(
               web3Service.isConnected
-                  ? 'Conectado: ${web3Service.connectedAddress?.hex.substring(0, 10)}...'
+                  ? 'Conectado: ${web3Service.connectedAddress?.substring(0, 10)}...'
                   : 'No conectado',
               style: const TextStyle(color: Colors.grey),
             ),
@@ -280,7 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          connected ? '✅ Wallet conectado' : '❌ Error conectando',
+          (connected?.isNotEmpty ?? false) ? '✅ Wallet conectado' : '❌ Error conectando',
         ),
       ),
     );
@@ -326,7 +326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Saldo: ${balance?.getValueInUnit(EtherUnit.ether)} ETH'),
+          content: Text('Saldo: $balance'),
         ),
       );
     } catch (e) {

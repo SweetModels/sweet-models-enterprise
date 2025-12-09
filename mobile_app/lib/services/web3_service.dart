@@ -1,127 +1,113 @@
 import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:walletconnect_dart/walletconnect_dart.dart';
+import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
-import 'package:http/http.dart' as http;
 
-/// Servicio para conectar con Metamask, Phantom y otros wallets Web3
-/// Soporta: Ethereum, Polygon
+/// Servicio Web3 mínimo usando WalletConnect + Metamask/TrustWallet
 class Web3Service extends ChangeNotifier {
-  // Estado de conexión
-  EthereumAddress? _connectedAddress;
-  Web3Client? _web3Client;
-  String? _chainId;
-  bool _isConnected = false;
+  Web3Service() {
+    _connector = WalletConnect(
+      bridge: 'https://bridge.walletconnect.org',
+      clientMeta: const PeerMeta(
+        name: 'Sweet Models Enterprise',
+        description: 'Autenticación Web3',
+        url: 'https://sweetmodels.app',
+        icons: ['https://sweetmodels.app/icon.png'],
+      ),
+    );
 
-  // Getters
-  EthereumAddress? get connectedAddress => _connectedAddress;
-  bool get isConnected => _isConnected;
-  String? get chainId => _chainId;
-
-  final String _rpcUrl = 'https://mainnet.infura.io/v3/7e6c91e5d5a15b2f5c7d8e8c8d9e9e9e';
-
-  Web3Service();
-
-  /// 🔗 Conectar con WalletConnect v2 (Metamask, Phantom, etc.)
-  Future<bool> connectWallet() async {
-    try {
-      // Simular conexión - en producción usar walletconnect_flutter_v2
-      _connectedAddress = EthereumAddress.fromHex('0x742d35Cc6634C0532925a3b844Bc3e7d8c4eC7f6');
-      _chainId = '1';
-      _isConnected = true;
-      
-      // Inicializar Web3Client
-      _web3Client = Web3Client(_rpcUrl, http.Client());
-      
+    _connector.on('disconnect', (_) {
+      _session = null;
+      _address = null;
       notifyListeners();
-      debugPrint('✅ Wallet conectado: ${_connectedAddress?.hex}');
-      return true;
+    });
+  }
+
+  late final WalletConnect _connector;
+  SessionStatus? _session;
+  String? _address;
+
+  String? get walletAddress => _address;
+  bool get isConnected => _connector.connected && _address != null;
+  String? get connectedAddress => _address;
+  String get chainId => 'ethereum'; // Retorna el chain ID actual
+
+  /// Abre la app de la wallet y retorna la dirección pública
+  Future<String?> connectWallet() async {
+    try {
+      if (_connector.connected && _address != null) {
+        return _address;
+      }
+
+      _session = await _connector.createSession(onDisplayUri: (uri) async {
+        final encoded = Uri.encodeComponent(uri);
+        final metamaskDeepLink = 'https://metamask.app.link/wc?uri=$encoded';
+        final trustWalletDeepLink = 'trustwallet://wc?uri=$uri';
+
+        if (await canLaunchUrlString(metamaskDeepLink)) {
+          await launchUrlString(metamaskDeepLink, mode: LaunchMode.externalApplication);
+        } else if (await canLaunchUrlString(trustWalletDeepLink)) {
+          await launchUrlString(trustWalletDeepLink, mode: LaunchMode.externalApplication);
+        } else {
+          await launchUrlString(uri, mode: LaunchMode.externalApplication);
+        }
+      });
+
+      _address = _session?.accounts.isNotEmpty == true ? _session!.accounts.first : null;
+      notifyListeners();
+      return _address;
     } catch (e) {
-      debugPrint('❌ Error conectando: $e');
-      _isConnected = false;
-      return false;
+      debugPrint('❌ Error conectando wallet: $e');
+      return null;
     }
   }
 
-  /// ✍️ Firmar un mensaje con el wallet
+  /// Solicita al usuario firmar un mensaje (nonce) y retorna la firma hex
   Future<String?> signMessage(String message) async {
     try {
-      if (!_isConnected || _connectedAddress == null) {
-        throw Exception('Wallet no conectado');
-      }
+      final address = _address ?? await connectWallet();
+      if (address == null) throw Exception('Wallet no conectada');
 
-      // Simular firma - en producción usar walletconnect_flutter_v2
-      final signature = '0x' + List<int>.generate(65, (_) => 42).map((e) => e.toRadixString(16).padLeft(2, '0')).join();
-      
-      debugPrint('✅ Mensaje firmado');
-      return signature;
+      // personal_sign requiere el mensaje en hex
+      final msgHex = '0x${bytesToHex(message.codeUnits)}';
+      final sig = await _connector.sendCustomRequest(
+        method: 'personal_sign',
+        params: [msgHex, address],
+      );
+
+      return sig is String ? sig : sig?.toString();
     } catch (e) {
       debugPrint('❌ Error firmando: $e');
       return null;
     }
   }
 
-  /// 💰 Obtener balance de Ether
-  Future<EtherAmount?> getBalance() async {
+  Future<void> disconnect() async {
     try {
-      if (_web3Client == null || _connectedAddress == null) {
-        throw Exception('Wallet o cliente no inicializado');
+      if (_connector.connected) {
+        await _connector.killSession();
       }
+      _session = null;
+      _address = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error al desconectar: $e');
+    }
+  }
 
-      final balance = await _web3Client!.getBalance(_connectedAddress!);
-      debugPrint('💰 Balance: ${balance.getValueInUnit(EtherUnit.ether)} ETH');
-      return balance;
+  /// Desconecta la wallet (alias para disconnect)
+  Future<void> disconnectWallet() async => await disconnect();
+
+  /// Obtiene el balance de la wallet (mock para ahora)
+  Future<String> getBalance() async {
+    try {
+      if (_address == null) throw Exception('Wallet no conectada');
+      // En producción, hacer llamada RPC real a eth_getBalance
+      return '0.0 ETH'; // Mock
     } catch (e) {
       debugPrint('❌ Error obteniendo balance: $e');
-      return null;
+      return '0.0 ETH';
     }
-  }
-
-  /// 💸 Enviar transacción
-  Future<String?> sendTransaction({
-    required String toAddress,
-    required String amount,
-    required String? privateKey,
-  }) async {
-    try {
-      if (_web3Client == null || privateKey == null) {
-        throw Exception('Configuración incompleta');
-      }
-
-      final credential = EthPrivateKey.fromHex(privateKey);
-      final txHash = await _web3Client!.sendTransaction(
-        credential,
-        Transaction(
-          to: EthereumAddress.fromHex(toAddress),
-          value: EtherAmount.fromUnitAndValue(EtherUnit.ether, amount),
-          gasPrice: EtherAmount.inWei(BigInt.one),
-        ),
-        chainId: int.tryParse(_chainId ?? '1'),
-      );
-
-      debugPrint('✅ Transacción enviada: $txHash');
-      return txHash;
-    } catch (e) {
-      debugPrint('❌ Error en transacción: $e');
-      return null;
-    }
-  }
-
-  /// 🔌 Desconectar wallet
-  Future<void> disconnectWallet() async {
-    try {
-      _isConnected = false;
-      _connectedAddress = null;
-      _chainId = null;
-      _web3Client?.dispose();
-      notifyListeners();
-      debugPrint('✅ Wallet desconectado');
-    } catch (e) {
-      debugPrint('❌ Error desconectando: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _web3Client?.dispose();
-    super.dispose();
   }
 }

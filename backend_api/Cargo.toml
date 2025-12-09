@@ -5,7 +5,11 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.7", features = ["ws", "macros", "multipart"] }
+hyper = { version = "0.14", features = ["full"] }
+hyper-rustls = { version = "0.24", features = ["http2"] }
 tokio = { version = "1", features = ["full"] }
+tokio-rustls = { version = "0.24", default-features = false, features = ["logging", "tls12"] }
+rustls-pemfile = "1"
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
 tracing = "0.1"
@@ -29,9 +33,14 @@ ethers-core = "2.0"
 hex = "0.4"
 bs58 = "0.5"
 ed25519-dalek = "2.1"
+sha3 = "0.10"
+
+# Auto-reparación / Phoenix
+async-openai = "0.23"
+regex = "1"
+dotenv = "0.15"
 
 # Seguridad
-sha3 = "0.10"
 aes-gcm = "0.10"
 rand = "0.8"
 argon2 = "0.5"
@@ -50,3 +59,6 @@ dashmap = "5.5"
 futures-util = "0.3"
 base64 = "0.21"
 thiserror = "1.0"
+
+# ZK Auth
+k256 = { version = "0.13", features = ["ecdsa"] }
