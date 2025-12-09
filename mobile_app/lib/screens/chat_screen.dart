@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
 import '../services/chat_service.dart';
 
+/// ChatScreen mejorado con Shadcn UI y backend real
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 

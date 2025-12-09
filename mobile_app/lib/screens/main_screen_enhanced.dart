@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/adaptive_layout.dart';
-import '../dashboard_screen.dart';
+import 'dashboard_screen_shadcn.dart'; // ⭐ Nuevo dashboard con Shadcn UI
 import 'chat_screen.dart';
 import 'social_screen.dart';
 import 'financial_screen.dart';

@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/web3_service.dart';
 
 /// Pantalla de Finanzas - Dashboard financiero con Web3
 /// Diseño enterprise minimalista usando Shadcn UI Zinc palette
-class FinancialScreen extends StatefulWidget {
+/// Conectado con Web3Service para wallet real
+class FinancialScreen extends ConsumerStatefulWidget {
   const FinancialScreen({Key? key}) : super(key: key);
 
   @override
-  State<FinancialScreen> createState() => _FinancialScreenState();
+  ConsumerState<FinancialScreen> createState() => _FinancialScreenState();
 }
 
-class _FinancialScreenState extends State<FinancialScreen> {
+class _FinancialScreenState extends ConsumerState<FinancialScreen> {
   String _selectedPeriod = '30d';
+  bool _isConnecting = false;
   
   @override
   Widget build(BuildContext context) {
@@ -90,9 +95,7 @@ class _FinancialScreenState extends State<FinancialScreen> {
             const Spacer(),
             ShadButton.ghost(
               icon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
-              onPressed: () {
-                // Conectar wallet
-              },
+              onPressed: _isConnecting ? null : _connectWallet,
             ),
             const SizedBox(width: 8),
             ShadButton.ghost(
@@ -183,13 +186,7 @@ class _FinancialScreenState extends State<FinancialScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            '5.234 ETH • 0x1a2b...3c4d',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF71717A),
-            ),
-          ),
+          _buildWalletInfo(),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -205,6 +202,111 @@ class _FinancialScreenState extends State<FinancialScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildWalletInfo() {
+    final web3Service = ref.watch(web3ServiceProvider);
+    
+    if (web3Service.isConnected) {
+      final address = web3Service.currentAddress;
+      return Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF22C55E).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: const Color(0xFF22C55E),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.circle,
+                  size: 8,
+                  color: Color(0xFF22C55E),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Conectado',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF22C55E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: address));
+                _showSnackBar('📋 Dirección copiada', isSuccess: true);
+              },
+              child: Text(
+                '${address.substring(0, 6)}...${address.substring(address.length - 4)}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF71717A),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 16, color: Color(0xFF71717A)),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: address));
+              _showSnackBar('📋 Dirección copiada', isSuccess: true);
+            },
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 16,
+            color: Color(0xFFEF4444),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Wallet no conectada',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF71717A),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ShadButton(
+            onPressed: _isConnecting ? null : _connectWallet,
+            size: ShadButtonSize.sm,
+            child: _isConnecting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF09090B),
+                      ),
+                    ),
+                  )
+                : Text(
+                    'Conectar',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildPeriodButton(String period) {
@@ -481,6 +583,48 @@ class _FinancialScreenState extends State<FinancialScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // Conectar Web3 Wallet
+  Future<void> _connectWallet() async {
+    setState(() => _isConnecting = true);
+
+    try {
+      final web3Service = ref.read(web3ServiceProvider);
+      await web3Service.connectWallet();
+
+      if (mounted && web3Service.isConnected) {
+        final address = web3Service.currentAddress;
+        _showSnackBar('✅ Wallet conectado: ${address.substring(0, 8)}...', isSuccess: true);
+        
+        // Actualizar balance
+        setState(() {}); // Refresh UI
+      } else {
+        _showSnackBar('❌ No se pudo conectar la wallet', isSuccess: false);
+      }
+    } catch (e) {
+      _showSnackBar('❌ Error: ${e.toString()}', isSuccess: false);
+    } finally {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {required bool isSuccess}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
+        backgroundColor: isSuccess
+            ? const Color(0xFF22C55E)
+            : const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
