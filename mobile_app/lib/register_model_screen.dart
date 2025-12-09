@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'api_service.dart';
 
+/// Pantalla de Registro de Modelo
+/// Diseño enterprise minimalista usando Shadcn UI Zinc palette
 class RegisterModelScreen extends StatefulWidget {
   const RegisterModelScreen({Key? key}) : super(key: key);
 
