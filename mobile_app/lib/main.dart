@@ -11,6 +11,7 @@ import 'financial_planning_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
 import 'screens/login_screen_shadcn.dart';
+import 'screens/main_screen.dart'; // ⭐ Pantalla principal con navegación adaptativa
 import 'register_model_screen.dart';
 import 'camera_monitor_screen.dart';
 import 'otp_verification_screen.dart';
@@ -67,7 +68,8 @@ class MyApp extends StatelessWidget {
       
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginScreenShadcn(), // 🎨 Nueva pantalla Shadcn
+        '/': (context) => const LoginScreenShadcn(), // 🎨 Pantalla de login con Shadcn
+        '/main': (context) => const MainScreen(),     // ⭐ Navegación adaptativa principal
         '/login': (context) => const LoginScreen(),   // Pantalla original (fallback)
         '/dashboard': (context) => const DashboardScreen(),
         '/register': (context) => const RegisterScreen(),

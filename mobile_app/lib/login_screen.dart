@@ -119,8 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // final isBiometricEnabled = await _biometricService.isBiometricEnabled();
         // if (!isBiometricEnabled && _biometricAvailable) { ... }
 
-        // Navegar al dashboard inmediatamente
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        // Navegar a MainScreen (navegación adaptativa) después de login exitoso
+        Navigator.of(context).pushReplacementNamed('/main');
       }
     } catch (e) {
       if (mounted) {
