@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'api_service.dart';
 import 'biometric_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -181,199 +182,247 @@ class _LoginScreenState extends State<LoginScreen> {
     final isLargeScreen = size.width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF09090B), // Zinc-950 (Negro puro)
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: isLargeScreen ? 48.0 : 24.0,
+              vertical: 24.0,
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isLargeScreen ? 500 : double.infinity,
+                maxWidth: isLargeScreen ? 420 : double.infinity,
               ),
-              child: Card(
-                elevation: 8,
-                color: const Color(0xFF1D1E33),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+              child: ShadCard(
+                backgroundColor: const Color(0xFF18181B), // Zinc-900
+                border: Border.all(
+                  color: const Color(0xFF27272A), // Zinc-800
+                  width: 1,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Logo
-                        const Icon(
-                          Icons.account_balance_wallet,
-                          size: 80,
-                          color: Color(0xFFEB1555),
+                padding: EdgeInsets.all(isLargeScreen ? 48.0 : 32.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Logo/Icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAFAFA).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Sweet Models',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        child: const Icon(
+                          Icons.diamond_outlined,
+                          size: 48,
+                          color: Color(0xFFFAFAFA),
                         ),
-                        const Text(
-                          'Enterprise',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFFEB1555),
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Email field
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.email, color: Color(0xFFEB1555)),
-                            filled: true,
-                            fillColor: const Color(0xFF111328),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
+                      // Title
+                      const Text(
+                        'Sweet Models',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFAFAFA),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'ENTERPRISE',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF71717A), // Zinc-500
+                          letterSpacing: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Email Input
+                      ShadInput(
+                        controller: _emailController,
+                        placeholder: const Text('Email'),
+                        keyboardType: TextInputType.emailAddress,
+                        prefix: const Padding(
+                          padding: EdgeInsets.only(left: 12, right: 8),
+                          child: Icon(
+                            Icons.email_outlined,
+                            size: 20,
+                            color: Color(0xFF71717A),
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFFFAFAFA),
+                          fontSize: 15,
+                        ),
+                        decoration: ShadDecoration(
+                          border: ShadBorder.all(
+                            color: const Color(0xFF27272A),
+                            width: 1,
+                          ),
+                          focusedBorder: ShadBorder.all(
+                            color: const Color(0xFFFAFAFA),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password Input
+                      ShadInput(
+                        controller: _passwordController,
+                        placeholder: const Text('Contraseña'),
+                        obscureText: _obscurePassword,
+                        prefix: const Padding(
+                          padding: EdgeInsets.only(left: 12, right: 8),
+                          child: Icon(
+                            Icons.lock_outline,
+                            size: 20,
+                            color: Color(0xFF71717A),
+                          ),
+                        ),
+                        suffix: Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: ShadButton.ghost(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              size: 18,
+                              color: const Color(0xFF71717A),
                             ),
+                            onPressed: () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                            },
+                            size: ShadButtonSize.sm,
                           ),
-                          style: const TextStyle(color: Colors.white),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor ingresa tu email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Email inválido';
-                            }
-                            return null;
-                          },
                         ),
-                        const SizedBox(height: 16),
+                        style: const TextStyle(
+                          color: Color(0xFFFAFAFA),
+                          fontSize: 15,
+                        ),
+                        decoration: ShadDecoration(
+                          border: ShadBorder.all(
+                            color: const Color(0xFF27272A),
+                            width: 1,
+                          ),
+                          focusedBorder: ShadBorder.all(
+                            color: const Color(0xFFFAFAFA),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Contraseña',
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.lock, color: Color(0xFFEB1555)),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                color: Colors.white54,
+                      // Login Button (Primary - Blanco)
+                      ShadButton(
+                        onPressed: _isLoading ? null : _login,
+                        backgroundColor: const Color(0xFFFAFAFA),
+                        hoverBackgroundColor: const Color(0xFFE4E4E7),
+                        width: double.infinity,
+                        size: ShadButtonSize.lg,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+                                ),
+                              )
+                            : const Text(
+                                'Ingresar',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF09090B),
+                                ),
                               ),
-                              onPressed: () {
-                                setState(() => _obscurePassword = !_obscurePassword);
-                              },
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFF111328),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          style: const TextStyle(color: Colors.white),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor ingresa tu contraseña';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
+                      ),
+                      const SizedBox(height: 12),
 
-                        // Login button
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEB1555),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 4,
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Text(
-                                  'Iniciar Sesión',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                      // Web3 Wallet Button (Outline)
+                      ShadButton.outline(
+                        onPressed: _isWeb3Loading ? null : _loginWithWeb3,
+                        width: double.infinity,
+                        size: ShadButtonSize.lg,
+                        icon: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 18,
+                        ),
+                        child: _isWeb3Loading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFAFAFA)),
                                 ),
-                        ),
+                              )
+                            : const Text(
+                                'Conectar Web3 Wallet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 24),
 
-                        const SizedBox(height: 12),
-
-                        OutlinedButton.icon(
-                          onPressed: _isWeb3Loading ? null : _loginWithWeb3,
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF0B84FF)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: const Color(0xFF27272A),
                             ),
                           ),
-                          icon: const Icon(Icons.account_balance_wallet, color: Color(0xFF0B84FF)),
-                          label: _isWeb3Loading
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0B84FF)),
-                                  ),
-                                )
-                              : const Text(
-                                  'Acceder con Web3 Wallet',
-                                  style: TextStyle(
-                                    color: Color(0xFF0B84FF),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-
-                        // Biometric button (si está disponible)
-                        // Deshabilitado en Windows por flutter_secure_storage
-                        // if (_biometricAvailable) ...[
-                        //   const SizedBox(height: 16),
-                        //   OutlinedButton.icon(...
-                        // ],
-
-                        const SizedBox(height: 16),
-
-                        // Register link
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pushNamed('/register_model');
-                          },
-                          child: const Text(
-                            '¿No tienes cuenta? Regístrate como modelo',
-                            style: TextStyle(color: Color(0xFFEB1555)),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'o',
+                              style: TextStyle(
+                                color: Color(0xFF71717A),
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: const Color(0xFF27272A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register Link
+                      ShadButton.ghost(
+                        onPressed: () {
+                          Navigator.of(context).pushNamed('/register_model');
+                        },
+                        width: double.infinity,
+                        child: const Text(
+                          '¿No tienes cuenta? Regístrate como modelo',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFA1A1AA),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
