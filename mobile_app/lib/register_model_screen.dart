@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'api_service.dart';
 
 class RegisterModelScreen extends StatefulWidget {
@@ -157,10 +158,10 @@ class _RegisterModelScreenState extends State<RegisterModelScreen> {
     final isLargeScreen = size.width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: const Color(0xFF09090B),
       appBar: AppBar(
         title: const Text('Registro de Modelo'),
-        backgroundColor: const Color(0xFF1D1E33),
+        backgroundColor: const Color(0xFF18181B),
         elevation: 0,
       ),
       body: Center(
@@ -171,14 +172,12 @@ class _RegisterModelScreenState extends State<RegisterModelScreen> {
               constraints: BoxConstraints(
                 maxWidth: isLargeScreen ? 600 : double.infinity,
               ),
-              child: Card(
-                elevation: 8,
-                color: const Color(0xFF1D1E33),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              child: ShadCard(
+                backgroundColor: const Color(0xFF18181B),
+                padding: const EdgeInsets.all(32.0),
+                border: Border.all(color: const Color(0xFF27272A)),
                 child: Padding(
-                  padding: const EdgeInsets.all(32.0),
+                  padding: const EdgeInsets.all(0),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -188,7 +187,7 @@ class _RegisterModelScreenState extends State<RegisterModelScreen> {
                         const Icon(
                           Icons.person_add_rounded,
                           size: 80,
-                          color: Color(0xFFEB1555),
+                          color: Color(0xFFFAFAFA),
                         ),
                         const SizedBox(height: 16),
                         const Text(
