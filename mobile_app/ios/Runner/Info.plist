@@ -45,5 +45,29 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- 📷 CAMERA PERMISSION (KYC, Videollamadas) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Sweet Models necesita acceso a tu cámara para verificación de identidad (KYC) y videollamadas.</string>
+	
+	<!-- 🖼️ PHOTO LIBRARY PERMISSION (Subir fotos de perfil, documentos) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sweet Models necesita acceso a tu galería para subir fotos de perfil y documentos verificación.</string>
+	
+	<!-- 📸 PHOTO LIBRARY WRITE PERMISSION (iOS 14+) -->
+	<key>NSPhotoLibraryAddOnlyUsageDescription</key>
+	<string>Sweet Models necesita permiso para guardar fotos en tu galería.</string>
+	
+	<!-- 🔐 FACE ID PERMISSION (Biometría local) -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Sweet Models usa Face ID para acceso seguro a tu cuenta. Puedes desactivarlo en Configuración.</string>
+	
+	<!-- 🎤 MICROPHONE PERMISSION (Videollamadas) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sweet Models necesita acceso a tu micrófono para videollamadas y conferencias.</string>
+	
+	<!-- 📱 LOCATION PERMISSION (Opcional - para futuros features) -->
+	<!-- <key>NSLocationWhenInUseUsageDescription</key> -->
+	<!-- <string>Sweet Models necesita tu ubicación para servicios localizados.</string> -->
 </dict>
 </plist>

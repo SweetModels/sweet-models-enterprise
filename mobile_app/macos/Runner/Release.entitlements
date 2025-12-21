@@ -2,7 +2,32 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- 📱 Sandbox Security (Obligatorio para macOS) -->
 	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	
+	<!-- 🔧 Development Features -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	
+	<!-- 🌐 NETWORK ACCESS (Cliente - Saliente) -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	
+	<!-- 🖥️ NETWORK ACCESS (Servidor - Entrante) -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+	
+	<!-- 📁 FILE ACCESS (Lectura/Escritura) -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	
+	<!-- 🎥 CAMERA ACCESS (Para videollamadas/KYC) -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
+	
+	<!-- 🎤 MICROPHONE ACCESS -->
+	<key>com.apple.security.device.microphone</key>
 	<true/>
 </dict>
 </plist>

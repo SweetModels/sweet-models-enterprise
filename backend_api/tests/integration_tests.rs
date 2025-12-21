@@ -2,22 +2,20 @@
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     
     #[tokio::test]
     async fn test_health_endpoint() {
         // Health check should always return 200 OK
         // This is a placeholder - full integration tests would require
         // setting up test database and running actual server
-        assert!(true);
     }
     
     #[test]
     fn test_generate_jwt() {
         // Test JWT generation
         let user_id = "test-user-id";
-        let email = "test@example.com";
-        let role = "model";
+        let _email = "test@example.com";
+        let _role = "model";
         
         // This would require importing the actual function from main.rs
         // For now, just placeholder
@@ -36,7 +34,6 @@ mod tests {
     #[test]
     fn test_token_generation() {
         // Test refresh token generation
-        use rand::Rng;
         use hex;
         
         let random_bytes: Vec<u8> = (0..64).map(|_| rand::random::<u8>()).collect();
@@ -94,6 +91,8 @@ mod util_tests {
 // Mock data tests
 #[cfg(test)]
 mod data_tests {
+    use super::goal_achieved;
+
     #[test]
     fn test_payroll_calculation() {
         // Test payroll calculation logic

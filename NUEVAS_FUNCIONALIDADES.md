@@ -6,6 +6,7 @@
 
 ---
 
+
 ## 1. 🔄 Sistema de Refresh Tokens
 
 ### Backend Rust - Sistema Refresh
@@ -24,6 +25,7 @@
   - Validación de expiración y revocación
   - Cleanup automático de tokens expirados
 
+
 ### Flutter - Sistema Refresh
 
 - **Servicio:** `token_service.dart`
@@ -35,8 +37,8 @@
   - Inyección automática de Bearer token
   - Renovación transparente antes de expirar
   - Manejo de errores 401 con reintentos
-
 ---
+
 
 ## 2. 🔔 Sistema de Notificaciones
 
@@ -59,6 +61,7 @@
   - Deep linking con `action_url`
   - Cleanup automático (30 días)
 
+
 ### Flutter - Notificaciones
 
 - **Servicio:** `notification_service.dart`
@@ -71,8 +74,8 @@
   - Lista con filtros (todas, no leídas, por tipo)
   - Cards diferenciados por prioridad
   - Swipe para marcar como leída
-
 ---
+
 
 ## 3. 👔 Dashboard de Administrador
 
@@ -92,6 +95,7 @@
   - Logs de auditoría (24 horas)
 - **Función SQL:** `refresh_admin_dashboard()` - Actualiza vista materializada
 
+
 ### Flutter - Dashboard
 
 - **Pantalla:** `admin_dashboard_screen.dart`
@@ -101,8 +105,8 @@
   - Resumen de actividad
   - Pull-to-refresh
   - Diálogo de exportación
-
 ---
+
 
 ## 4. 📥 Exportación de Datos
 
@@ -118,14 +122,15 @@
   - `rust_xlsxwriter = "0.68"` - Generación Excel
   - `printpdf = "0.7"` - Generación PDF
 
+
 ### Flutter - Exportación
 
 - **Diálogo de exportación** en Admin Dashboard
   - Selección de formato (CSV, Excel, PDF)
   - Feedback con SnackBar
   - Descarga automática (pendiente)
-
 ---
+
 
 ## 5. 🔄 Sincronización en Background
 
@@ -142,8 +147,8 @@
   - Trigger manual de sincronización
   - Cancelación de todas las tareas
 - **Dependencia:** `workmanager: ^0.5.2`
-
 ---
+
 
 ## 6. 🌍 Multi-idioma (i18n)
 
@@ -169,8 +174,8 @@
   - Soporta EN, ES, PT
   - Carga asíncrona
   - No recarga innecesariamente
-
 ---
+
 
 ## 7. 🧪 Tests Automatizados
 
@@ -192,6 +197,7 @@
   - `hyper = "1.0"`
   - `http-body-util = "0.1"`
 
+
 ### Flutter - Testing
 
 - **Archivos:**
@@ -212,8 +218,8 @@
   - Notification card: display, high priority styling
   - Progress bar: percentage, goal achieved indicator
   - Export dialog: format options
-
 ---
+
 
 ## 🗄️ Migraciones SQL Creadas
 
@@ -221,20 +227,18 @@
    - Tabla con hash SHA256
    - Cleanup automático
    - Device fingerprinting
-
 2. **009_notifications.sql**
    - 3 tablas: notifications, notification_preferences, device_tokens
    - Función `cleanup_old_notifications()`
    - Función `get_unread_count(user_id)`
-
 3. **010_admin_dashboard.sql**
    - Tabla `export_logs`
    - Tabla `system_stats`
    - Vista materializada `admin_dashboard_stats`
    - Función `refresh_admin_dashboard()`
    - Función `generate_daily_stats()`
-
 ---
+
 
 ## 📦 Dependencias Agregadas
 
@@ -247,6 +251,7 @@ csv = "1.3"             # CSV export
 calamine = "0.24"       # Excel reading
 rust_xlsxwriter = "0.68" # Excel writing
 printpdf = "0.7"        # PDF generation
+
 ```
 
 ### Frontend (pubspec.yaml)
@@ -263,13 +268,16 @@ pdf: ^3.11.0                       # PDF generation
 flutter_localizations:             # i18n support
   sdk: flutter
 fl_chart: ^0.69.0                  # Charts for dashboard
+
 ```
 
 ---
 
+
 ## 🚀 Endpoints Totales
 
 **25 endpoints** en total:
+
 
 ### Auth (5)
 
@@ -279,6 +287,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - POST /auth/logout ✨ NUEVO
 - POST /auth/send-otp
 
+
 ### Notifications (4) ✨ NUEVOS
 
 - GET /api/notifications
@@ -286,21 +295,25 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - POST /api/notifications/register-device
 - POST /api/admin/notifications/send
 
+
 ### Admin (3)
 
 - GET /api/admin/dashboard ✨ NUEVO
 - GET /api/admin/export ✨ NUEVO
 - GET /api/admin/financial-history
 
+
 ### Moderator (2)
 
 - GET /api/mod/groups
 - POST /api/mod/production
 
+
 ### Model (2)
 
 - GET /api/model/home
 - POST /api/model/sign-contract
+
 
 ### Others (9)
 
@@ -313,8 +326,8 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - POST /api/financial_planning
 - POST /admin/trm
 - GET /admin/cameras
-
 ---
+
 
 ## 📊 Métricas del Proyecto
 
@@ -329,8 +342,8 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - **Nuevas migraciones SQL:** 3
 - **Tests automatizados:** 25+ (backend + Flutter)
 - **Tablas de base de datos:** 15 (7 originales + 8 nuevas)
-
 ---
+
 
 ## ✅ Estado de Implementación
 
@@ -344,6 +357,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - ✅ Multi-idioma i18n (Flutter)
 - ✅ Tests Automatizados (backend + Flutter)
 
+
 ### Pendientes (opcionales)
 
 - ⏳ UI de notificaciones (pantalla dedicada)
@@ -351,12 +365,13 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - ⏳ Generación real de archivos CSV/Excel/PDF
 - ⏳ Descarga de exports
 - ⏳ Selector de idioma en Settings
-
 ---
+
 
 ## 🔥 Próximos Pasos Sugeridos
 
 1. **Aplicar migraciones:**
+
 
    ```bash
    docker-compose down
@@ -366,12 +381,14 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 
 2. **Compilar backend:**
 
+
    ```bash
    cd backend_api
    cargo build --release
    ```
 
 3. **Instalar deps Flutter:**
+
 
    ```bash
    cd mobile_app
@@ -380,10 +397,11 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 
 4. **Ejecutar tests:**
 
+
    ```bash
    # Backend
    cargo test
-   
+
    # Flutter
    flutter test
    ```
@@ -393,8 +411,8 @@ fl_chart: ^0.69.0                  # Charts for dashboard
    - Descargar `google-services.json` (Android)
    - Descargar `GoogleService-Info.plist` (iOS)
    - Colocar en directorios correspondientes
-
 6. **Commit a Git:**
+
 
    ```bash
    git add .
@@ -404,6 +422,7 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 
 ---
 
+
 ## 🎓 Documentación de Referencia
 
 - **JWT Refresh Tokens:** <https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/>
@@ -412,7 +431,5 @@ fl_chart: ^0.69.0                  # Charts for dashboard
 - **Flutter i18n:** <https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization>
 - **FL Chart:** <https://pub.dev/packages/fl_chart>
 - **Rust SQLx:** <https://docs.rs/sqlx/latest/sqlx/>
-
 ---
-
 **¡Todo implementado y listo para producción!** 🚀🎉

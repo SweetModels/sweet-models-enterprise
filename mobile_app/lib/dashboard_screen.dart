@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -18,7 +19,7 @@ class DashboardScreen extends ConsumerWidget {
     final numberFormat = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: const Color(0xFF09090B),
       appBar: AppBar(
         title: const Text(
           'Panel de Control',
@@ -28,16 +29,16 @@ class DashboardScreen extends ConsumerWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF1A1F3A),
+        backgroundColor: const Color(0xFF18181B),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.calculate, color: Color(0xFF00F5FF)),
+            icon: const Icon(Icons.calculate, color: Color(0xFFFAFAFA)),
             onPressed: () => Navigator.pushNamed(context, '/financial_planning'),
             tooltip: 'Financial Planning',
           ),
           IconButton(
-            icon: const Icon(Icons.group, color: Color(0xFF00F5FF)),
+            icon: const Icon(Icons.group, color: Color(0xFFFAFAFA)),
             onPressed: () => Navigator.pushNamed(context, '/groups'),
             tooltip: 'Groups',
           ),

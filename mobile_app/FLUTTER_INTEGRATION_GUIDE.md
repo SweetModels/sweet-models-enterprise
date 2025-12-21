@@ -6,6 +6,7 @@ La app móvil ya puede integrar estos 3 nuevos sistemas:
 
 ---
 
+
 ## 1️⃣ **VERIFICACIÓN POR OTP (SMS)**
 
 ### **Flujo de Registro con OTP**
@@ -30,6 +31,7 @@ if (verifyResponse['phone_verified']) {
   print('✅ Teléfono verificado');
   // Continuar con registro
 }
+
 ```
 
 ### **Actualizar ApiService para OTP**
@@ -45,7 +47,7 @@ Future<Map<String, dynamic>> sendOtp(String phone) async {
         'phone': phone,
       },
     );
-    
+
     print('✅ OTP enviado: ${response.data}');
     return response.data;
   } on DioException catch (e) {
@@ -66,7 +68,7 @@ Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
         'code': code,
       },
     );
-    
+
     print('✅ OTP verificado: ${response.data}');
     return response.data;
   } on DioException catch (e) {
@@ -77,9 +79,11 @@ Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
     }
   }
 }
+
 ```
 
 ---
+
 
 ## 2️⃣ **GESTIÓN DE CÁMARAS CCTV**
 
@@ -114,7 +118,7 @@ class _CameraMonitorScreenState extends State<CameraMonitorScreen> {
   Future<void> _checkAdminAccess() async {
     final prefs = await SharedPreferences.getInstance();
     _userRole = prefs.getString('user_role') ?? '';
-    
+
     if (_userRole != 'admin') {
       setState(() => _hasAccess = false);
       return;
@@ -125,7 +129,7 @@ class _CameraMonitorScreenState extends State<CameraMonitorScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
-      
+
       if (token == null) {
         throw Exception('No authentication token');
       }
@@ -350,6 +354,7 @@ class _CameraMonitorScreenState extends State<CameraMonitorScreen> {
     );
   }
 }
+
 ```
 
 ### **Actualizar ApiService**
@@ -370,9 +375,11 @@ Future<Map<String, dynamic>> getCameras() async {
     }
   }
 }
+
 ```
 
 ---
+
 
 ## 3️⃣ **UPLOAD DE DOCUMENTOS KYC**
 
@@ -418,6 +425,7 @@ Future<Map<String, dynamic>> uploadKycDocument({
     rethrow;
   }
 }
+
 ```
 
 ### **Pantalla de Upload en RegisterModelScreen**
@@ -432,10 +440,10 @@ Future<void> _uploadDocument(String documentType) async {
   if (image == null) return;
 
   final file = File(image.path);
-  
+
   try {
     setState(() => _isLoading = true);
-    
+
     final response = await ApiService().uploadKycDocument(
       userId: userId, // Obtenido del login
       documentType: documentType,
@@ -459,9 +467,11 @@ Future<void> _uploadDocument(String documentType) async {
     setState(() => _isLoading = false);
   }
 }
+
 ```
 
 ---
+
 
 ## 📝 ACTUALIZACIÓN DE PUBSPEC.YAML
 
@@ -470,18 +480,23 @@ dependencies:
   image_picker: ^0.8.9
   http_parser: ^4.0.2
   # ... otros
+
 ```
 
 Instalar:
+
 ```bash
 flutter pub add image_picker http_parser
+
 ```
 
 ---
 
+
 ## 🔄 FLUJO COMPLETO DE REGISTRO CON OTP Y KYC
 
 ```
+
 ┌─ REGISTRO MODELO ─┐
 │                  │
 ├─ Datos básicos   │
@@ -499,9 +514,11 @@ flutter pub add image_picker http_parser
 │ /upload/kyc      │
 │                  │
 └─ ✅ Registro OK  │
+
 ```
 
 ---
+
 
 ## 🧪 TESTS EN FLUTTER
 
@@ -521,7 +538,7 @@ void main() {
     test('Verify OTP', () async {
       // Primero enviar OTP
       await ApiService().sendOtp('+573001234567');
-      
+
       // Luego verificar (usar código real del servidor)
       final response = await ApiService().verifyOtp('+573001234567', '244045');
       expect(response['phone_verified'], true);
@@ -530,19 +547,21 @@ void main() {
     test('Get Cameras (requires admin token)', () async {
       // Hacer login como admin
       final loginResponse = await ApiService().login(
-        'karber.pacheco007@gmail.com',
+        'karber.pacheco007`@gmail.com`',
         'Isaias..20-26',
       );
-      
+
       // Obtener cámaras
       final camerasResponse = await ApiService().getCameras();
       expect(camerasResponse['total_active'], greaterThan(0));
     });
   });
 }
+
 ```
 
 ---
+
 
 ## 🚀 PRÓXIMOS PASOS
 
@@ -550,22 +569,17 @@ void main() {
    - Agregar campo de teléfono
    - Botón "Enviar OTP"
    - Pantalla para ingresar código
-
 2. **Mejorar CameraMonitorScreen**
    - Integrar flutter_vlc_player para video RTSP
    - Mostrar stream en vivo
    - Controles de play/pause
-
 3. **Sistema de KYC completo**
    - Cámara para fotografías
    - Galería de documentos
    - Estado de aprobación
-
 4. **Notificaciones**
    - When KYC approved/rejected
    - When camera goes offline
    - New security alerts
-
 ---
-
 **¡App y Backend están listos para integración completa! 🎉**

@@ -7,6 +7,7 @@
 - ✅ .gitignore configurado
 - ✅ README actualizado
 
+
 ## 🚀 Pasos para Subir a GitHub
 
 ### 1. Crear Repositorio en GitHub
@@ -22,26 +23,34 @@
    - ⚠️ **NO marques**: "Add README", "Add .gitignore", "Choose a license" (ya los tienes)
 4. Click **"Create repository"**
 
+
 ### 2. Conectar Repositorio Local con GitHub
 
 GitHub te mostrará las instrucciones. Copia y ejecuta estos comandos en PowerShell:
 
 ```powershell
+
 # Navegar al proyecto
+
 cd "c:\Users\USUARIO\Desktop\Sweet Models Enterprise\sweet_models_enterprise"
 
 # Configurar tu información (solo la primera vez)
+
 git config --global user.name "Tu Nombre"
-git config --global user.email "tu@email.com"
+git config --global user.email "tu`@email.com`"
 
 # Conectar con GitHub (reemplaza TU_USUARIO con tu usuario de GitHub)
+
 git remote add origin https://github.com/TU_USUARIO/sweet-models-enterprise.git
 
 # Verificar que se agregó correctamente
+
 git remote -v
 
 # Subir el código (primera vez)
+
 git push -u origin master
+
 ```
 
 ### 3. Autenticación
@@ -58,17 +67,23 @@ GitHub te pedirá autenticación. Opciones:
 6. **COPIA EL TOKEN** (solo lo verás una vez)
 7. Cuando Git pida contraseña, pega el token
 
+
 #### Opción B: GitHub CLI (Más fácil)
 
 ```powershell
+
 # Instalar GitHub CLI (si no lo tienes)
+
 winget install --id GitHub.cli
 
 # Autenticarte
+
 gh auth login
 
 # Luego puedes usar gh para push
+
 gh repo create sweet-models-enterprise --private --source=. --push
+
 ```
 
 ## 📦 Estructura Subida
@@ -89,6 +104,7 @@ sweet-models-enterprise/
     ├── ios/               ✅ Proyecto iOS
     ├── windows/           ✅ Proyecto Windows
     └── pubspec.yaml       ✅ Dependencias Flutter
+
 ```
 
 ## 🔒 Archivos NO Subidos (por .gitignore)
@@ -99,25 +115,33 @@ sweet-models-enterprise/
 - ❌ `*.log` - Logs temporales
 - ❌ Scripts de desarrollo temporal
 
+
 ## 📝 Comandos Útiles Post-Push
 
 ```powershell
+
 # Ver estado
+
 git status
 
 # Hacer cambios futuros
+
 git add .
 git commit -m "Descripción del cambio"
 git push
 
 # Ver historial
+
 git log --oneline
 
 # Crear rama nueva
+
 git checkout -b feature/nueva-funcionalidad
 
 # Ver ramas
+
 git branch -a
+
 ```
 
 ## 🌐 URL del Repositorio
@@ -126,6 +150,7 @@ Después de crear el repo, tu URL será:
 
 ```text
 https://github.com/TU_USUARIO/sweet-models-enterprise
+
 ```
 
 ## 🎯 Siguientes Pasos Recomendados
@@ -143,11 +168,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v3
       - name: Build
         run: cd backend_api && cargo build --verbose
+        run: cd backend_api && cargo build --verbose
+
       - name: Run tests
         run: cd backend_api && cargo test --verbose
+        run: cd backend_api && cargo test --verbose
+
 ```
 
 ### 2. Configurar GitHub Secrets
@@ -157,6 +187,7 @@ Para variables de entorno:
 - Settings → Secrets and variables → Actions
 - Add: `DATABASE_URL`, `JWT_SECRET`, etc.
 
+
 ### 3. Badges en README
 
 Añade al README.md:
@@ -165,6 +196,7 @@ Añade al README.md:
 ![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)
 ![Flutter](https://img.shields.io/badge/flutter-3.24.5+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 ```
 
 ## ⚠️ Importante: Seguridad
@@ -176,13 +208,17 @@ Añade al README.md:
 - ✅ Cambia `JWT_SECRET` en producción
 - ✅ Usa variables de entorno para credenciales
 
+
 ### Archivos a revisar
 
 ```powershell
+
 # Buscar posibles secrets
+
 git grep -i "password"
 git grep -i "secret"
 git grep -i "token"
+
 ```
 
 ## 📞 Soporte
@@ -192,9 +228,8 @@ Si tienes problemas:
 1. Revisa el status: `git status`
 2. Revisa los remotos: `git remote -v`
 3. Verifica autenticación: `gh auth status`
-
 ---
-
 **¡Listo para GitHub!** 🚀
+
 
 Ahora tu código está versionado localmente. Solo falta ejecutar los comandos de conexión con GitHub.

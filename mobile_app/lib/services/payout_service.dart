@@ -6,6 +6,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PayoutService {
   final Dio _dio;
@@ -293,8 +294,6 @@ class UserBalanceResponse {
 // ============================================================================
 // RIVERPOD PROVIDERS
 // ============================================================================
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider for PayoutService singleton
 final payoutServiceProvider = Provider<PayoutService>((ref) {

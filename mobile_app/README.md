@@ -11,6 +11,7 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Gestión de sesiones con revocación de tokens
 - Modo offline con caché local
 
+
 ### 👥 Gestión de Usuarios
 
 - Roles: Model, Moderador, Administrador
@@ -18,12 +19,14 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Sistema de puntos y niveles
 - Top performers con rankings
 
+
 ### 📊 Operaciones Diarias
 
 - Registro de producción por modelo
 - Cálculo automático de tokens/comisiones
 - Logs de auditoría detallados
 - Sincronización en background cada 15 minutos
+
 
 ### 🔔 Notificaciones
 
@@ -33,6 +36,7 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Quiet hours configuration
 - Prioridades (info, success, warning, error)
 
+
 ### 📈 Admin Dashboard
 
 - Métricas en tiempo real (modelos activos, ingresos, tokens)
@@ -40,11 +44,13 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Top 10 performers
 - Exportación de datos (CSV/Excel/PDF)
 
+
 ### 🌍 Internacionalización (i18n)
 
 - 3 idiomas: Inglés (EN-US), Español (ES-CO), Portugués (PT-BR)
 - 340+ traducciones
 - Cambio dinámico de idioma
+
 
 ### 🔄 Background Tasks
 
@@ -53,49 +59,67 @@ Aplicación móvil multiplataforma (Android/iOS/Windows) para la gestión de mod
 - Verificación de notificaciones (30 min)
 - Persistencia de tareas pendientes
 
+
 ### 🧪 Testing
 
 - Unit tests para lógica de negocio
 - Widget tests para UI components
 - Cobertura de código >80%
 
+
 ## 🚀 Quick Start
 
 ### Desarrollo (Debug)
 
 ```powershell
+
 # Clonar repositorio
+
 git clone https://github.com/SweetModels/sweet-models-enterprise.git
 cd sweet-models-enterprise/mobile_app
 
 # Instalar dependencias
+
 flutter pub get
 
 # Ejecutar en emulador/dispositivo
+
 flutter run
 
 # Ejecutar tests
+
 flutter test
+
 ```
 
 ### Producción (Release)
 
 ```powershell
+
 # 1. Verificar que todo esté listo
+
 .\check_build_readiness.ps1
 
 # 2. Configurar firma Android (solo primera vez)
+
 .\setup_android_signing.ps1
 
 # 3. Compilar releases
+
 .\build_release.ps1 -Platform all
 
 # 4. Archivos generados:
+
 # - Android APK: build/app/outputs/flutter-apk/
+
 # - Android AAB: build/app/outputs/bundle/release/
+
 # - Windows EXE: build/windows/x64/runner/Release/
+
 # - Windows MSIX: build/windows/runner/Release/
+
 # - Instalador Windows: build/windows/installer/
+
 ```
 
 ## 📚 Documentación
@@ -104,13 +128,19 @@ flutter test
 - **[BUILD_RELEASE_GUIDE.md](BUILD_RELEASE_GUIDE.md)**: Documentación completa de release engineering
 - **[NUEVAS_FUNCIONALIDADES.md](../NUEVAS_FUNCIONALIDADES.md)**: Changelog detallado de features
 
+
 ## 🛠️ Scripts Disponibles
 
 | Script | Descripción | Uso |
+
 |--------|-------------|-----|
+
 | `check_build_readiness.ps1` | Verifica requisitos pre-build | `.\check_build_readiness.ps1` |
+
 | `setup_android_signing.ps1` | Genera keystore para Android | `.\setup_android_signing.ps1` |
+
 | `build_release.ps1` | Compila releases (APK/AAB/EXE/MSIX) | `.\build_release.ps1 -Platform all` |
+
 | `bump_version.ps1` | Incrementa versión (SemVer) | `.\bump_version.ps1 -BumpType patch` |
 
 ## 🏗️ Arquitectura
@@ -121,6 +151,7 @@ flutter test
 - Providers para services (Auth, Notifications, Background Sync)
 - StateNotifier para estados complejos
 
+
 ### Networking
 
 - **Dio** para peticiones HTTP con interceptors
@@ -128,17 +159,20 @@ flutter test
 - Retry logic con exponential backoff
 - Offline detection con caché fallback
 
+
 ### Persistencia Local
 
 - **SharedPreferences** para settings y tokens
 - **WorkManager** para background tasks
 - Caché de notificaciones para modo offline
 
+
 ### Backend API
 
 - **Base URL**: `http://localhost:3000` (desarrollo)
 - **Producción**: Configurar en `lib/services/api_service.dart`
 - **Endpoints**: 25+ REST APIs (auth, users, production, notifications, admin)
+
 
 ## 📦 Dependencias Principales
 
@@ -156,6 +190,7 @@ dependencies:
 
 dev_dependencies:
   msix: ^3.16.8                   # Windows MSIX packaging
+
 ```
 
 ## 🔧 Configuración
@@ -166,6 +201,7 @@ dev_dependencies:
 2. Coloca en `android/app/google-services.json`
 3. Para iOS, descarga `GoogleService-Info.plist` y coloca en `ios/Runner/`
 
+
 ### Backend URL
 
 Edita `lib/services/api_service.dart`:
@@ -175,6 +211,7 @@ class ApiService {
   static const String baseUrl = 'https://tu-dominio.com'; // Cambiar en producción
   // ...
 }
+
 ```
 
 ### Android Signing
@@ -185,27 +222,37 @@ Ejecuta `setup_android_signing.ps1` y sigue las instrucciones para:
 - Crear `android/key.properties`
 - Configurar `android/app/build.gradle`
 
+
 ## 🧪 Ejecutar Tests
 
 ```powershell
+
 # Todos los tests
+
 flutter test
 
 # Con cobertura
+
 flutter test --coverage
 genhtml coverage/lcov.info -o coverage/html
 
 # Tests específicos
+
 flutter test test/unit_tests.dart
 flutter test test/widget_tests.dart
+
 ```
 
 ## 🌐 Idiomas Soportados
 
 | Código | Idioma | Estado |
+
 |--------|--------|--------|
+
 | `en` | English (US) | ✅ 100% |
+
 | `es` | Español (Colombia) | ✅ 100% |
+
 | `pt` | Português (Brasil) | ✅ 100% |
 
 Cambiar idioma en la app: **Settings → Language → Seleccionar**
@@ -213,10 +260,15 @@ Cambiar idioma en la app: **Settings → Language → Seleccionar**
 ## 📱 Plataformas Soportadas
 
 | Plataforma | Estado | Min Version | Notas |
+
 |------------|--------|-------------|-------|
+
 | Android | ✅ Soportado | API 21 (5.0 Lollipop) | Google Play ready |
+
 | iOS | ⚠️ Pendiente | iOS 12+ | Requiere Mac + Xcode |
+
 | Windows | ✅ Soportado | Windows 10 1809+ | MSIX + Inno Setup |
+
 | Web | ❌ No soportado | - | Backend CORS pendiente |
 
 ## 🔐 Seguridad
@@ -227,6 +279,7 @@ Cambiar idioma en la app: **Settings → Language → Seleccionar**
 - ✅ HTTPS only en producción
 - ✅ Keystore con RSA 2048-bit
 - ⚠️ NUNCA subir `upload-keystore.jks` ni `key.properties` a Git
+
 
 ## 📊 Métricas del Proyecto
 
@@ -239,6 +292,7 @@ Cambiar idioma en la app: **Settings → Language → Seleccionar**
 - **Pantallas**: 12+
 - **API Endpoints**: 25+
 
+
 ## 🤝 Contribuir
 
 1. Fork el repositorio
@@ -246,6 +300,7 @@ Cambiar idioma en la app: **Settings → Language → Seleccionar**
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la branch (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
+
 
 ## 📄 Licencia
 
@@ -255,7 +310,8 @@ Proyecto privado - Sweet Models Enterprise © 2024
 
 - **Issues**: [GitHub Issues](https://github.com/SweetModels/sweet-models-enterprise/issues)
 - **Documentación**: Ver archivos `*_GUIDE.md` y `*_README.md`
-- **Email**: <soporte@sweetmodels.com>
+- **Email**: <soporte`@sweetmodels.com`>
+
 
 ## 🎯 Roadmap
 
@@ -269,10 +325,12 @@ Proyecto privado - Sweet Models Enterprise © 2024
 - Exportación de datos (CSV/Excel/PDF)
 - Tests automatizados
 
+
 ### 🔄 En Progreso
 
 - Builds de producción (Android/Windows)
 - Distribución en Google Play / Microsoft Store
+
 
 ### 📋 Próximamente (v1.1.0)
 
@@ -283,6 +341,7 @@ Proyecto privado - Sweet Models Enterprise © 2024
 - Widgets de Home Screen (Android)
 - Soporte para tablets/iPad
 
+
 ### 🔮 Futuro (v2.0.0)
 
 - Machine Learning para predicciones
@@ -292,5 +351,6 @@ Proyecto privado - Sweet Models Enterprise © 2024
 - CI/CD con GitHub Actions
 
 ---
+
 
 Desarrollado con ❤️ usando Flutter, Rust y PostgreSQL

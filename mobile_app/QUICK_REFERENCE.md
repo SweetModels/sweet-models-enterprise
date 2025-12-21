@@ -3,6 +3,7 @@
 ## 1️⃣ OTP Verification Screen
 
 ### Usar desde cualquier pantalla:
+
 ```dart
 // Opción A: Navegar con argumentos
 Navigator.pushNamed(
@@ -31,16 +32,18 @@ Navigator.push(
     ),
   ),
 );
+
 ```
 
 ### En RegisterModelScreen:
+
 ```dart
 Future<void> _verifyPhoneWithOtp() async {
   final phone = '+57${_phoneController.text}';
-  
+
   // Enviar código
   final response = await ApiService().sendOtp(phone);
-  
+
   if (response['success']) {
     // Ir a pantalla de verificación
     if (mounted) {
@@ -58,6 +61,7 @@ Future<void> _verifyPhoneWithOtp() async {
     }
   }
 }
+
 ```
 
 ---
@@ -65,6 +69,7 @@ Future<void> _verifyPhoneWithOtp() async {
 ## 2️⃣ Identity Camera Screen
 
 ### Capturar documento:
+
 ```dart
 // Abrir cámara para capturar DNI
 Navigator.push(
@@ -80,9 +85,11 @@ Navigator.push(
     ),
   ),
 );
+
 ```
 
 ### En RegisterModelScreen con loop:
+
 ```dart
 Future<void> _captureAllDocuments() async {
   final documents = [
@@ -91,10 +98,10 @@ Future<void> _captureAllDocuments() async {
     'selfie',
     'proof_address',
   ];
-  
+
   for (String docType in documents) {
     if (!mounted) return;
-    
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -108,12 +115,14 @@ Future<void> _captureAllDocuments() async {
       ),
     );
   }
-  
+
   print('✅ Todos los documentos capturados');
 }
+
 ```
 
 ### Tipos de documentos:
+
 ```dart
 const documentTypes = {
   'national_id_front': '📄 Frente de la Cédula',
@@ -121,6 +130,7 @@ const documentTypes = {
   'selfie': '🤳 Foto de Rostro',
   'proof_address': '📮 Comprobante de Domicilio',
 };
+
 ```
 
 ---
@@ -128,6 +138,7 @@ const documentTypes = {
 ## 3️⃣ CCTV Grid Screen
 
 ### Navegar a monitoreo:
+
 ```dart
 // Navegar simple
 Navigator.pushNamed(context, '/cctv_grid');
@@ -140,9 +151,11 @@ Navigator.pushNamed(
     'filterPlatform': 'Studio', // Opcional
   },
 );
+
 ```
 
 ### En Dashboard agregando botón:
+
 ```dart
 ElevatedButton.icon(
   onPressed: () {
@@ -154,15 +167,18 @@ ElevatedButton.icon(
     backgroundColor: const Color(0xFFEB1555),
   ),
 ),
+
 ```
 
 ### Mostrar cámaras con estado:
+
 ```dart
 // El CctvGridScreen ya maneja:
 // - Carga de cámaras desde backend
 // - Grid 2x2 automático
 // - Estadísticas
 // - Fullscreen al tocar
+
 ```
 
 ---
@@ -170,6 +186,7 @@ ElevatedButton.icon(
 ## 4️⃣ RegisterModelScreenAdvanced
 
 ### Reemplazar en main.dart:
+
 ```dart
 // ANTES:
 routes: {
@@ -180,9 +197,11 @@ routes: {
 routes: {
   '/register_model': (context) => const RegisterModelScreenAdvanced(),
 }
+
 ```
 
 ### Uso completo:
+
 ```dart
 // En Dashboard o MainScreen
 ElevatedButton(
@@ -191,9 +210,11 @@ ElevatedButton(
   },
   child: const Text('Registrarse como Modelo'),
 ),
+
 ```
 
 ### Componentes internos:
+
 ```dart
 // Step 1: Información básica
 _buildStep1BasicInfo()
@@ -206,6 +227,7 @@ _buildStep3KycDocuments()
 
 // Step 4: Resumen y confirmación
 _buildStep4Summary()
+
 ```
 
 ---
@@ -213,15 +235,16 @@ _buildStep4Summary()
 ## 🎯 Casos de Uso Comunes
 
 ### Caso 1: Verificar teléfono después de login
+
 ```dart
 Future<void> _verifyPhone() async {
   final prefs = await SharedPreferences.getInstance();
   final phone = prefs.getString('user_phone');
-  
+
   if (phone != null && !phone.contains('+')) {
     phone = '+57$phone';
   }
-  
+
   Navigator.pushNamed(
     context,
     '/otp_verify',
@@ -234,13 +257,15 @@ Future<void> _verifyPhone() async {
     },
   );
 }
+
 ```
 
 ### Caso 2: Capturar documento específico
+
 ```dart
 Future<void> _captureDocumentForApproval(String docId) async {
   final userId = await _getUserId();
-  
+
   Navigator.push(
     context,
     MaterialPageRoute(
@@ -255,9 +280,11 @@ Future<void> _captureDocumentForApproval(String docId) async {
     ),
   );
 }
+
 ```
 
 ### Caso 3: Monitorear cámaras específicas
+
 ```dart
 // Ver solo cámaras del "Studio"
 Navigator.push(
@@ -268,6 +295,7 @@ Navigator.push(
     ),
   ),
 );
+
 ```
 
 ---
@@ -275,10 +303,11 @@ Navigator.push(
 ## 💾 Estado Local
 
 ### Guardar progreso de verificación:
+
 ```dart
 Future<void> _saveVerificationProgress() async {
   final prefs = await SharedPreferences.getInstance();
-  
+
   await prefs.setBool('phone_verified', _phoneVerified);
   await prefs.setStringList(
     'documents_uploaded',
@@ -289,22 +318,25 @@ Future<void> _saveVerificationProgress() async {
   );
   await prefs.setInt('registration_step', _currentStep);
 }
+
 ```
 
 ### Recuperar progreso:
+
 ```dart
 Future<void> _loadVerificationProgress() async {
   final prefs = await SharedPreferences.getInstance();
-  
+
   _phoneVerified = prefs.getBool('phone_verified') ?? false;
   final uploaded = prefs.getStringList('documents_uploaded') ?? [];
   _currentStep = prefs.getInt('registration_step') ?? 0;
-  
+
   // Restaurar estado
   for (String doc in uploaded) {
     _documentsUploaded[doc] = true;
   }
 }
+
 ```
 
 ---
@@ -312,7 +344,9 @@ Future<void> _loadVerificationProgress() async {
 ## 🔄 Flujos de Navegación
 
 ### Flujo 1: Login → Verificar → Dashboard
+
 ```
+
 LoginScreen
     ↓
     [Éxito]
@@ -322,10 +356,13 @@ OtpVerificationScreen (auto)
     [Verificado]
     ↓
 DashboardScreen
+
 ```
 
 ### Flujo 2: Registro completo
+
 ```
+
 RegisterModelScreenAdvanced
     ↓
 [Paso 1: Datos básicos]
@@ -337,10 +374,13 @@ RegisterModelScreenAdvanced
 [Paso 4: Resumen]
     ↓
 [Éxito → LoginScreen]
+
 ```
 
 ### Flujo 3: Admin monitoreo
+
 ```
+
 DashboardScreen
     ↓
 [Botón "Monitoreo"]
@@ -350,6 +390,7 @@ CctvGridScreen
 [Tap cámara]
     ↓
 CctvGridScreen (fullscreen modal)
+
 ```
 
 ---
@@ -357,31 +398,48 @@ CctvGridScreen (fullscreen modal)
 ## 🧪 Testing Rápido
 
 ### Test OTP:
+
 ```bash
+
 # 1. En browser/postman:
-POST http://localhost:3000/auth/send-otp
+
+POST `http://localhost:3000/auth/send-otp`
 { "phone": "+573001234567" }
 
 # 2. Ver código en logs
+
 docker logs sme_backend | grep "ENVIO SMS"
 
 # 3. En app, navegar a /otp_verify y ingresar código
+
 ```
 
 ### Test Camera:
+
 ```bash
+
 # 1. Permitir permisos de cámara en device
+
 # 2. Navegar a /identity_camera?documentType=national_id_front
+
 # 3. Capturar foto
+
 # 4. Esperar upload
+
 ```
 
 ### Test CCTV:
+
 ```bash
+
 # 1. Login como admin
+
 # 2. Navegar a /cctv_grid
+
 # 3. Ver grid con 4 cámaras
+
 # 4. Tocar tarjeta para fullscreen
+
 ```
 
 ---
@@ -389,25 +447,33 @@ docker logs sme_backend | grep "ENVIO SMS"
 ## 📱 Ejemplos de Valores
 
 ### Teléfonos válidos:
+
 ```
+
 +573001234567    ✅
 +573055551234    ✅
 +571234567890    ✅
 573001234567     ❌ (falta +57)
 +1234567890      ❌ (no es Colombia)
+
 ```
 
 ### Documentos válidos:
+
 ```
+
 'national_id_front'    ✅
 'national_id_back'     ✅
 'selfie'               ✅
 'proof_address'        ✅
 'passport'             ❌ (no soportado)
+
 ```
 
 ### Estados de cámara:
+
 ```
+
 {
   "id": 1,
   "name": "Main Studio Cam 1",
@@ -415,6 +481,7 @@ docker logs sme_backend | grep "ENVIO SMS"
   "platform": "Studio",
   "is_active": true
 }
+
 ```
 
 ---
@@ -422,6 +489,7 @@ docker logs sme_backend | grep "ENVIO SMS"
 ## ⚡ Tips de Performance
 
 ### Optimizar carga de cámaras:
+
 ```dart
 // Usar StreamBuilder para actualizaciones en tiempo real
 StreamBuilder<List<Camera>>(
@@ -430,18 +498,23 @@ StreamBuilder<List<Camera>>(
     // Rebuild solo cuando hay nuevos datos
   },
 )
+
 ```
 
 ### Caché de imágenes:
+
 ```dart
 // Precarga de fotos en background
 precacheImage(AssetImage('assets/icon.png'), context);
+
 ```
 
 ### Lazy load documentos:
+
 ```dart
 // Solo cargar documento cuando es necesario
 _documentsUploaded.putIfAbsent(docType, () => false);
+
 ```
 
 ---
@@ -449,27 +522,33 @@ _documentsUploaded.putIfAbsent(docType, () => false);
 ## 🎨 Personalización
 
 ### Cambiar colores:
+
 ```dart
 // En main.dart theme:
 const Color(0xFFEB1555)  // Principal (cambiar aquí)
 const Color(0xFF0A0E27)  // Background
 const Color(0xFF1D1E33)  // Surface
+
 ```
 
 ### Cambiar textos:
+
 ```dart
 // En cada Screen:
 const String kVerificationTitle = 'Verificación de Identidad';
 const String kOtpSent = 'Hemos enviado un código a:';
+
 ```
 
 ### Cambiar duraciones:
+
 ```dart
 // En otp_verification_screen.dart:
 _countdownSeconds = 30;  // Cambiar aquí
 
 // En identity_camera_screen.dart:
 await Future.delayed(const Duration(seconds: 1));  // Cambiar aquí
+
 ```
 
 ---
@@ -498,6 +577,7 @@ await ApiService().uploadKycDocument(userId, type, file)
 // Get Cameras
 await ApiService().getCameras()
 // → {cameras: [...], total_active: 4}
+
 ```
 
 ---
