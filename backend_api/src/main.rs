@@ -1253,7 +1253,7 @@ async fn get_cameras_handler(
     let cameras: Vec<Camera> = sqlx::query_as::<_, Camera>(
         "SELECT id, name, stream_url, platform, is_active FROM cameras ORDER BY id"
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1534,7 +1534,7 @@ async fn get_dashboard(
         ORDER BY created_at DESC
         "#
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1620,12 +1620,12 @@ async fn get_model_home(
     let month_start_date = NaiveDate::from_ymd_opt(now.year(), now.month(), 1).unwrap();
     let month_start = month_start_date.and_hms_opt(0, 0, 0).unwrap().and_utc();
 
-    let trm = current_trm(&pool).await;
+    let trm = current_trm(&state.db).await;
 
-    let today_points = sum_points_since(&pool, &claims.sub, Some(today_start)).await?;
-    let week_points = sum_points_since(&pool, &claims.sub, Some(week_start)).await?;
-    let month_points = sum_points_since(&pool, &claims.sub, Some(month_start)).await?;
-    let active_points = sum_points_since(&pool, &claims.sub, None).await?;
+    let today_points = sum_points_since(&state.db, &claims.sub, Some(today_start)).await?;
+    let week_points = sum_points_since(&state.db, &claims.sub, Some(week_start)).await?;
+    let month_points = sum_points_since(&state.db, &claims.sub, Some(month_start)).await?;
+    let active_points = sum_points_since(&state.db, &claims.sub, None).await?;
 
     let token_to_cop = |points: f64| points * TOKEN_VALUE_MULTIPLIER * (trm - TRM_ADJUSTMENT);
 
@@ -1692,7 +1692,7 @@ async fn get_model_stats(
     let today_tokens: i64 = today_tokens_f64.floor() as i64;
 
     // 6. Get today's earnings in COP
-    let trm = current_trm(&pool).await;
+    let trm = current_trm(&state.db).await;
     let today_earnings_cop = today_tokens as f64 * TOKEN_VALUE_MULTIPLIER * (trm - TRM_ADJUSTMENT);
 
     let response = ModelStatsResponse {
@@ -1734,7 +1734,7 @@ async fn get_recent_penalties(
            LIMIT 3"#
     )
     .bind(user_uuid)
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch penalties: {}", e)))?;
 
@@ -1851,7 +1851,7 @@ async fn get_moderator_groups(
         "SELECT id::text, name, members_count, total_tokens::text FROM groups WHERE user_id = $1 ORDER BY created_at DESC",
     )
     .bind(uuid::Uuid::parse_str(&claims.sub).unwrap())
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1971,7 +1971,7 @@ async fn register_production_handler(
 /// Retorna datos históricos en formato candlestick para gráficos
 /// Requiere rol 'admin'
 async fn get_financial_history(
-    State(_pool): State<PgPool>,
+    State(_pool): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<FinancialCandle>>, StatusCode> {
     // Extraer y validar token
@@ -2142,7 +2142,7 @@ async fn get_notifications(
         .bind(user_id)
         .bind(limit)
         .bind(offset)
-        .fetch_all(&pool)
+        .fetch_all(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2489,7 +2489,7 @@ async fn process_payout(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid admin ID".to_string()))?;
 
     // Obtener balance actual (ganado - pagado)
-    let balance = calculate_user_balance(&pool, user_uuid).await?;
+    let balance = calculate_user_balance(&state.db, user_uuid).await?;
 
     if payload.amount > balance.pending_balance {
         return Err((StatusCode::BAD_REQUEST, format!(
@@ -2519,7 +2519,7 @@ async fn process_payout(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert payout: {}", e)))?;
 
     // Nuevo saldo (recalcular por consistencia)
-    let updated_balance = calculate_user_balance(&pool, user_uuid).await?;
+    let updated_balance = calculate_user_balance(&state.db, user_uuid).await?;
 
     tracing::info!(
         "✅ Payout recorded: payout_id={}, new_pending=${:.2}",
@@ -2570,7 +2570,7 @@ async fn get_payout_history_handler(
         "#
     )
     .bind(user_uuid)
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -2620,7 +2620,7 @@ async fn get_user_balance_handler(
 
     let email = email.ok_or((StatusCode::NOT_FOUND, "User not found".to_string()))?;
 
-    let balance = calculate_user_balance(&pool, user_uuid).await?;
+    let balance = calculate_user_balance(&state.db, user_uuid).await?;
 
     let last_payout: Option<String> = sqlx::query_scalar(
         "SELECT created_at::text FROM payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
@@ -2765,6 +2765,9 @@ async fn main() {
         .await
         .expect("Failed to start server");
 }
+
+
+
 
 
 
