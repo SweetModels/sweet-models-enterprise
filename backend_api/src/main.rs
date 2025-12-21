@@ -2672,8 +2672,9 @@ async fn main() {
     //     .expect("Failed to run migrations");
 
     let app = Router::new()
+        // Health first, simple OK for Railway
+        .route("/health", get(|| async { "OK" }))
         .route("/", get(root))
-        .route("/health", get(health))
         .route("/api/auth/login", post(handlers::auth::login))
         .route("/api/admin/production", post(handlers::admin::register_production))
         .route("/api/admin/penalize", post(handlers::admin::penalize_model))
@@ -2735,10 +2736,11 @@ async fn main() {
         .with_state(pool);
 
     // Bind to 0.0.0.0 and use dynamic PORT with default 8080
-    let port = std::env::var("PORT").unwrap_or("8080".to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
 
+    println!("Listening on 0.0.0.0:{}", port);
     tracing::info!("🚀 Server running on {}", addr);
     tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Payouts/Liquidation, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
 
