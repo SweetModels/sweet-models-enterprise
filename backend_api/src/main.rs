@@ -24,6 +24,7 @@ use sha2::{Sha256, Digest};
 use hex;
 use std::collections::HashMap;
 use crate::state::AppState;
+use deadpool_redis::{Config, Runtime};
 
 // Módulos personalizados
 mod models;
@@ -2665,6 +2666,13 @@ async fn main() {
         .await
         .expect("Failed to create pool");
 
+    // Initialize Redis connection
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let redis_cfg = Config::from_url(redis_url);
+    let redis_pool = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
+    println!("✅ Connected to Redis");
+    tracing::info!("✅ Connected to Redis");
+
     // Initialize MongoDB connection
     let mongodb_url = std::env::var("MONGODB_URL").expect("MONGODB_URL not set");
     let mongo_client = mongodb::Client::with_uri_str(&mongodb_url)
@@ -2673,10 +2681,11 @@ async fn main() {
     println!("✅ Connected to MongoDB");
     tracing::info!("✅ Connected to MongoDB");
 
-    // Create AppState with both databases
+    // Create AppState with all databases
     let state = AppState {
-        db: state.db.clone(),
+        db: pool.clone(),
         mongo: mongo_client.clone(),
+        redis: redis_pool,
     };
 
     tracing::info!("🔄 Running migrations...");
