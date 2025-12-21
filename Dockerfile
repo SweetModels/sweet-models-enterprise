@@ -7,7 +7,7 @@
 # ============================================================================
 # STAGE 1: Builder - Compilar la aplicación Rust
 # ============================================================================
-FROM rust:1.75-bookworm as builder
+FROM rust:latest as builder
 
 # Instalar dependencias de sistema necesarias para compilación
 RUN apt-get update && apt-get install -y \
