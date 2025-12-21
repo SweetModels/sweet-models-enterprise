@@ -24,6 +24,8 @@ mobile_app/.flutter-plugins
 mobile_app/.flutter-plugins-dependencies
 mobile_app/.packages
 mobile_app/build/
+mobile_app/build_outputs/
+mobile_app/build_windows/
 mobile_app/ios/Flutter/flutter_export_environment.sh
 mobile_app/ios/Flutter/Generated.xcconfig
 mobile_app/ios/Flutter/flutter_export_environment.sh
@@ -39,6 +41,9 @@ mobile_app/macos/Flutter/GeneratedPluginRegistrant.swift
 mobile_app/windows/flutter/generated_plugin_registrant.cc
 mobile_app/windows/flutter/generated_plugin_registrant.h
 mobile_app/windows/flutter/generated_plugins.cmake
+*.apk
+*.aab
+*.ipa
 
 # ============================================================================
 # PYTHON
