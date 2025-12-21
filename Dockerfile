@@ -46,8 +46,8 @@ RUN useradd -m -u 1001 -s /bin/bash appuser
 # Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar binario compilado desde el builder
-COPY --from=builder /app/backend_api/target/release/backend_api /app/backend_api
+# Copiar binario compilado desde el builder (entrypoint servidor)
+COPY --from=builder /app/backend_api/target/release/backend_api /app/server
 
 # Copiar migraciones de base de datos (si existen)
 COPY --from=builder /app/backend_api/migrations /app/migrations
@@ -66,4 +66,4 @@ ENV RUST_LOG=info
 ENV PORT=8080
 
 # Comando de inicio
-CMD ["/app/backend_api"]
+CMD ["/app/server"]

@@ -2735,13 +2735,11 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
-    // Bind to 0.0.0.0 and use dynamic PORT with default 8080
-    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-    let addr = format!("0.0.0.0:{}", port);
-    let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
+    // Bind explicitly to 0.0.0.0:8080 for Railway healthcheck
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
-    println!("Listening on 0.0.0.0:{}", port);
-    tracing::info!("🚀 Server running on {}", addr);
+    println!("🚀 Server listening on 0.0.0.0:8080");
+    tracing::info!("🚀 Server listening on 0.0.0.0:8080");
     tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Payouts/Liquidation, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
 
     axum::serve(listener, app)
