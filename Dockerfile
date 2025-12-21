@@ -1,7 +1,7 @@
 # ============================================================================
 # Sweet Models Enterprise - Production Dockerfile
 # ============================================================================
-# Multi-stage build para optimizar tamaño de imagen final
+# Dockerfile para monorepo - El código de Rust está en backend_api/
 # Railway detectará automáticamente este archivo en la raíz del proyecto
 
 # ============================================================================
@@ -19,17 +19,11 @@ RUN apt-get update && apt-get install -y \
 # Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de configuración de Cargo primero (para cachear dependencias)
-COPY backend_api/Cargo.toml backend_api/Cargo.lock ./
+# Copiar TODO el proyecto (monorepo completo)
+COPY . .
 
-# Crear proyecto dummy para cachear dependencias
-RUN mkdir src && \
-    echo "fn main() {println!(\"dummy\")}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copiar todo el código fuente del backend
-COPY backend_api/ .
+# Cambiar al directorio donde está el Cargo.toml
+WORKDIR /app/backend_api
 
 # Compilar en modo release (optimizado para producción)
 RUN cargo build --release
@@ -53,10 +47,10 @@ RUN useradd -m -u 1001 -s /bin/bash appuser
 WORKDIR /app
 
 # Copiar binario compilado desde el builder
-COPY --from=builder /app/target/release/backend_api /app/backend_api
+COPY --from=builder /app/backend_api/target/release/backend_api /app/backend_api
 
 # Copiar migraciones de base de datos (si existen)
-COPY --from=builder /app/migrations /app/migrations
+COPY --from=builder /app/backend_api/migrations /app/migrations
 
 # Cambiar ownership al usuario no-root
 RUN chown -R appuser:appuser /app
