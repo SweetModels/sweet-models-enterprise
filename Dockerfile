@@ -28,8 +28,8 @@ WORKDIR /app/backend_api
 # Compilar en modo release (optimizado para producción)
 RUN cargo build --release
 
-# DEBUG: Listar artefactos para ver el nombre real del binario
-RUN ls -la /app/backend_api/target/release/
+# SMART COPY: Buscar ejecutable compilado y copiarlo como /tmp/server
+RUN find ./target/release -maxdepth 1 -type f -executable -exec cp {} /tmp/server \;
 
 # ============================================================================
 # STAGE 2: Runtime - Imagen final ligera
@@ -49,8 +49,8 @@ RUN useradd -m -u 1001 -s /bin/bash appuser
 # Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar binario compilado desde el builder (entrypoint servidor)
-COPY --from=builder /app/backend_api/target/release/backend_api /app/server
+# Copiar binario renombrado "server" desde la etapa builder
+COPY --from=builder /tmp/server /app/server
 
 # Copiar migraciones de base de datos (si existen)
 COPY --from=builder /app/backend_api/migrations /app/migrations
