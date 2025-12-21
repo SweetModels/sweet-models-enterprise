@@ -2664,7 +2664,13 @@ async fn main() {
         .await
         .expect("Failed to create pool");
 
-    tracing::info!("🔄 Running migrations...");
+    // Initialize MongoDB connection
+    let mongodb_url = std::env::var("MONGODB_URL").expect("MONGODB_URL not set");
+    let mongo_client = mongodb::Client::with_uri_str(&mongodb_url)
+        .await
+        .expect("Failed to create MongoDB client");
+    println!("✅ Connected to MongoDB");
+    tracing::info!("✅ Connected to MongoDB");
     // Temporarily skip migration check - table already exists
     // sqlx::migrate!("./migrations")
     //     .run(&pool)
@@ -2733,7 +2739,7 @@ async fn main() {
             .route("/api/admin/payouts/:user_id", get(get_payout_history_handler))
             .route("/api/admin/user-balance/:user_id", get(get_user_balance_handler))
         .layer(CorsLayer::permissive())
-        .with_state(pool);
+        .with_state((pool.clone(), mongo_client.clone()));
 
     // Bind explicitly to 0.0.0.0:8080 for Railway healthcheck
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
