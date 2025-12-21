@@ -28,6 +28,9 @@ WORKDIR /app/backend_api
 # Compilar en modo release (optimizado para producción)
 RUN cargo build --release
 
+# DEBUG: Listar artefactos para ver el nombre real del binario
+RUN ls -la /app/backend_api/target/release/
+
 # ============================================================================
 # STAGE 2: Runtime - Imagen final ligera
 # ============================================================================
@@ -53,7 +56,7 @@ COPY --from=builder /app/backend_api/target/release/backend_api /app/server
 COPY --from=builder /app/backend_api/migrations /app/migrations
 
 # Cambiar ownership al usuario no-root
-RUN chown -R appuser:appuser /app
+RUN chmod +x /app/server && chown -R appuser:appuser /app
 
 # Cambiar a usuario no-root
 USER appuser
