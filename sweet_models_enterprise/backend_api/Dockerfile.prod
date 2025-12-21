@@ -1,0 +1,70 @@
+# ════════════════════════════════════════════════════════════════
+# MULTI-STAGE RUST BUILD - OPTIMIZED FOR PRODUCTION
+# ════════════════════════════════════════════════════════════════
+
+# STAGE 1: Builder
+FROM rust:1.91.1-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    musl-dev \
+    libssl-dev \
+    pkg-config \
+    git \
+    ca-certificates
+
+# Create app directory
+WORKDIR /build
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Copy source
+COPY src ./src
+
+# Build release binary (with optimizations)
+RUN cargo build --release --locked
+
+# ════════════════════════════════════════════════════════════════
+# STAGE 2: Runtime
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    ca-certificates \
+    libssl \
+    libgcc \
+    tzdata \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 appuser && \
+    adduser -D -u 1001 -G appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder --chown=appuser:appuser /build/target/release/backend_api /app/backend_api
+
+# Create required directories
+RUN mkdir -p /app/logs /app/data && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Expose ports
+EXPOSE 3000 50051
+
+# Set environment
+ENV RUST_LOG=info \
+    RUST_BACKTRACE=1
+
+# Run application
+CMD ["./backend_api"]

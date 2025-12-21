@@ -1,0 +1,438 @@
+version: '3.9'
+
+# SWEET MODELS ENTERPRISE - PRODUCTION DEPLOYMENT
+# Studios DK - Infrastructure as Code
+# Updated: December 11, 2025
+
+services:
+  # ════════════════════════════════════════════════════════════════
+  # REVERSE PROXY & GATEKEEPER (Nginx + Certbot)
+  # ════════════════════════════════════════════════════════════════
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: sme_gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/security.conf:/etc/nginx/security.conf:ro
+      
+      # SSL Certificates (Let's Encrypt)
+      - ./nginx/certbot/conf:/etc/letsencrypt:rw
+      - ./nginx/certbot/www:/var/www/certbot:rw
+      
+      # Cache and logs
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+    environment:
+      - TZ=UTC
+    depends_on:
+      - app
+      - minio
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: sme_certbot
+    restart: unless-stopped
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt:rw
+      - ./nginx/certbot/www:/var/www/certbot:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done;'"
+    networks:
+      - production_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ════════════════════════════════════════════════════════════════
+  # BACKEND APPLICATION (Rust)
+  # ════════════════════════════════════════════════════════════════
+  app:
+    build:
+      context: ./backend_api
+      dockerfile: Dockerfile.prod
+      args:
+        - RUST_BACKTRACE=1
+    container_name: sme_app_prod
+    restart: always
+    expose:
+      - "3000"
+      - "50051"
+    environment:
+      # Database
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - DB_POOL_SIZE=20
+      - DB_TIMEOUT=30
+      
+      # Cache
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_POOL_SIZE=50
+      
+      # Message Queue
+      - NATS_URL=nats://nats:4222
+      
+      # Storage
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_USE_PATH_STYLE=true
+      
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY=86400
+      
+      # Logging & Monitoring
+      - RUST_LOG=info,sqlx=warn,hyper=info
+      - RUST_BACKTRACE=1
+      - LOG_FORMAT=json
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      
+      # Application
+      - ENVIRONMENT=production
+      - VERSION=${APP_VERSION}
+      - TZ=UTC
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      # Application logs
+      - app_logs:/app/logs
+      - errors_log:/app/errors
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=app,environment=production"
+    security_opt:
+      - no-new-privileges:true
+    read_only_root_filesystem: true
+    tmpfs:
+      - /tmp
+      - /run
+
+  # ════════════════════════════════════════════════════════════════
+  # DATABASE (PostgreSQL 16)
+  # ════════════════════════════════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: sme_postgres_prod
+    restart: always
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C
+      - TZ=UTC
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=2GB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - work_mem=2621kB
+      - -c
+      - min_wal_size=4GB
+      - -c
+      - max_wal_size=16GB
+      - -c
+      - log_statement=all
+      - -c
+      - log_duration=on
+      - -c
+      - log_lock_waits=on
+    volumes:
+      # Data persistence
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_logs:/var/log/postgresql
+      # Initialization scripts
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+    security_opt:
+      - no-new-privileges:true
+
+  # ════════════════════════════════════════════════════════════════
+  # CACHE (Redis with Password)
+  # ════════════════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: sme_redis_prod
+    restart: always
+    expose:
+      - "6379"
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --loglevel
+      - notice
+    volumes:
+      - redis_data:/data
+      - redis_logs:/var/log/redis
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    security_opt:
+      - no-new-privileges:true
+
+  # ════════════════════════════════════════════════════════════════
+  # MESSAGE QUEUE (NATS)
+  # ════════════════════════════════════════════════════════════════
+  nats:
+    image: nats:2-alpine
+    container_name: sme_nats_prod
+    restart: always
+    expose:
+      - "4222"
+      - "8222"
+    command:
+      - -c
+      - /etc/nats/nats-server.conf
+    volumes:
+      - ./nats/nats-server.conf:/etc/nats/nats-server.conf:ro
+      - nats_data:/data
+      - nats_logs:/var/log/nats
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    security_opt:
+      - no-new-privileges:true
+
+  # ════════════════════════════════════════════════════════════════
+  # OBJECT STORAGE (MinIO)
+  # ════════════════════════════════════════════════════════════════
+  minio:
+    image: minio/minio:latest
+    container_name: sme_minio_prod
+    restart: always
+    expose:
+      - "9000"
+      - "9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER_REDIRECT_URL=https://${DOMAIN}/minio/
+      - TZ=UTC
+    command: minio server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+      - minio_logs:/var/log/minio
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    security_opt:
+      - no-new-privileges:true
+
+  # ════════════════════════════════════════════════════════════════
+  # MONITORING (Optional - Prometheus)
+  # ════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sme_prometheus_prod
+    restart: always
+    expose:
+      - "9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    networks:
+      - production_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+# ════════════════════════════════════════════════════════════════
+# NETWORKS
+# ════════════════════════════════════════════════════════════════
+networks:
+  production_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ════════════════════════════════════════════════════════════════
+# VOLUMES (Data Persistence)
+# ════════════════════════════════════════════════════════════════
+volumes:
+  # Database
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
+  postgres_logs:
+    driver: local
+
+  # Cache
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+  redis_logs:
+    driver: local
+
+  # Object Storage
+  minio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/minio
+  minio_logs:
+    driver: local
+
+  # Message Queue
+  nats_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/nats
+  nats_logs:
+    driver: local
+
+  # Application
+  app_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/app
+  errors_log:
+    driver: local
+
+  # Nginx
+  nginx_cache:
+    driver: local
+  nginx_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/nginx
+
+  # Monitoring
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/prometheus

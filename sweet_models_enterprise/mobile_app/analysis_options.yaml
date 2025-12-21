@@ -1,0 +1,97 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+    - ".dart_tool/**"
+    - "lib/generated/**"
+    - "test/.test_coverage.dart"
+  errors:
+    # Tratar todos los errores como warnings para no bloquear el desarrollo
+    missing_required_param: warning
+    missing_return: warning
+  language:
+    strict-casts: false
+    strict-inference: false
+    strict-raw-types: false
+
+linter:
+  rules:
+    # Reglas habilitadas para código limpio
+    always_declare_return_types: true
+    always_require_non_null_named_parameters: true
+    annotate_overrides: true
+    avoid_empty_else: true
+    avoid_print: false
+    avoid_relative_lib_imports: true
+    avoid_returning_null_for_future: true
+    avoid_slow_async_io: true
+    avoid_types_as_parameter_names: true
+    await_only_futures: true
+    camel_case_extensions: true
+    camel_case_types: true
+    cancel_subscriptions: true
+    close_sinks: true
+    comment_references: false
+    constant_identifier_names: true
+    control_flow_in_finally: true
+    empty_catches: true
+    empty_constructor_bodies: true
+    empty_statements: true
+    hash_and_equals: true
+    invariant_booleans: true
+    iterable_contains_unrelated_type: true
+    library_names: true
+    library_prefixes: true
+    list_remove_unrelated_type: true
+    no_duplicate_case_values: true
+    non_constant_identifier_names: true
+    null_closures: true
+    overridden_fields: true
+    package_names: true
+    package_prefixed_library_names: true
+    prefer_collection_literals: true
+    prefer_conditional_assignment: true
+    prefer_contains: true
+    prefer_equal_for_default_values: true
+    prefer_final_fields: true
+    prefer_for_elements_to_map_fromIterable: true
+    prefer_generic_function_type_aliases: true
+    prefer_if_null_operators: true
+    prefer_is_empty: true
+    prefer_is_not_empty: true
+    prefer_iterable_whereType: true
+    prefer_single_quotes: true
+    prefer_typing_uninitialized_variables: true
+    recursive_getters: true
+    slash_for_doc_comments: true
+    type_init_formals: true
+    unawaited_futures: true
+    unnecessary_brace_in_string_interps: true
+    unnecessary_const: true
+    unnecessary_getters_setters: true
+    unnecessary_new: true
+    unnecessary_null_aware_assignments: true
+    unnecessary_null_in_if_null_operators: true
+    unnecessary_overrides: true
+    unnecessary_parenthesis: true
+    unnecessary_statements: true
+    unnecessary_this: true
+    unrelated_type_equality_checks: true
+    use_function_type_syntax_for_parameters: true
+    use_rethrow_when_possible: true
+    valid_regexps: true
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options

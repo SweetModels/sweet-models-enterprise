@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sme_postgres
+    environment:
+      POSTGRES_USER: sme_user
+      POSTGRES_PASSWORD: sme_password
+      POSTGRES_DB: sme_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sme_user -d sme_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sme_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend_api
+      dockerfile: Dockerfile
+    container_name: sme_backend
+    environment:
+      DATABASE_URL: postgres://sme_user:sme_password@postgres:5432/sme_db
+      REDIS_URL: redis://redis:6379
+      RUST_LOG: info,sqlx=warn,hyper=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - internal_net
+
+volumes:
+  pgdata:
+  redis_data:
+
+networks:
+  internal_net:
+    driver: bridge
+    internal: false
