@@ -1,0 +1,63 @@
+# ============================================================================
+# .dockerignore - Archivos que NO se copian al contenedor Docker
+# ============================================================================
+
+# Carpetas de build/target
+backend_api/target/
+mobile_app/build/
+mobile_app/build_outputs/
+**/node_modules/
+**/dist/
+**/build/
+
+# Archivos de desarrollo
+.git/
+.github/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Documentación
+*.md
+!backend_api/README.md
+docs/
+
+# Scripts de desarrollo
+*.ps1
+*.sh
+*.py
+
+# Archivos de configuración local
+.env
+.env.local
+*.local
+
+# Archivos de log
+*.log
+
+# Archivos temporales
+*.tmp
+*.bak
+*.backup
+*~
+
+# Mobile app (no necesario para backend)
+mobile_app/
+StudiosDKTelemetry/
+extension_dk/
+
+# Tests y ejemplos
+backend_api/tests/
+backend_api/examples/
+test_*.json
+
+# Docker files (no copiar docker dentro de docker)
+docker/
+docker-compose*.yml
+Dockerfile*
+
+# Git
+.gitignore
+.gitattributes
