@@ -25,6 +25,9 @@ COPY . .
 # Cambiar al directorio donde está el Cargo.toml
 WORKDIR /app/backend_api
 
+# CACHE BUSTER: Forzar rebuild completo
+RUN echo "CacheBuster: $(date)"
+
 # Compilar en modo release (optimizado para producción)
 RUN cargo build --release
 
@@ -55,8 +58,11 @@ COPY --from=builder /tmp/server /app/server
 # Copiar migraciones de base de datos (si existen)
 COPY --from=builder /app/backend_api/migrations /app/migrations
 
-# Cambiar ownership al usuario no-root
-RUN chmod +x /app/server && chown -R appuser:appuser /app
+# DUAL NAMING: Crear symlink para que /app/backend_api apunte a /app/server
+RUN ln -s /app/server /app/backend_api
+
+# Permisos y ownership para ambos archivos
+RUN chmod +x /app/server /app/backend_api && chown -R appuser:appuser /app
 
 # Cambiar a usuario no-root
 USER appuser
