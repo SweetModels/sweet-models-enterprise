@@ -31,7 +31,6 @@ mod services;
 
 // Importar funciones JWT del módulo services
 use services::jwt::{validate_jwt, generate_jwt};
-mod services;
 
 
 // ============================================================================
@@ -49,7 +48,6 @@ const TOKEN_VALUE_MULTIPLIER: f64 = 0.05; // 5% base rate
 // AUTH STRUCTURES
 // ============================================================================
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
 // Claims se importa de services::jwt
 use services::jwt::Claims;
 
@@ -2417,63 +2415,53 @@ async fn generate_payout_receipt(
     transaction_ref: &Option<String>,
     payout_id: &Uuid,
 ) -> Result<String, String> {
-    use pdf_lib::*;
+    // TODO: PDF generation temporarily disabled - pdf_lib not available
+    // Use printpdf crate instead when implementing PDF receipts
     
     let filename = format!("receipt_{}.pdf", payout_id);
-    let filepath = format!("./uploads/receipts/{}", filename);
     
-    // Ensure receipts directory exists
+    tracing::warn!("📄 PDF receipt generation disabled - returning placeholder");
+    
+    // Return a placeholder path for now
+    Ok(format!("/uploads/receipts/{}", filename))
+    
+    /* Commented out until pdf_lib is replaced with printpdf:
+    use pdf_lib::*;
+    let filepath = format!("./uploads/receipts/{}", filename);
     std::fs::create_dir_all("./uploads/receipts")
         .map_err(|e| format!("Failed to create receipts directory: {}", e))?;
-    
     let (doc, page1, layer1) = PdfDocument::new("Payout Receipt", Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
-    
-    // Add title
     let font = doc.add_builtin_font(BuiltinFont::Helvetica).map_err(|e| format!("Font error: {}", e))?;
     let font_bold = doc.add_builtin_font(BuiltinFont::HelveticaBold).map_err(|e| format!("Font error: {}", e))?;
-    
     current_layer.use_text("SWEET MODELS ENTERPRISE", 24.0, Mm(50.0), Mm(270.0), &font_bold);
     current_layer.use_text("Payment Receipt", 18.0, Mm(70.0), Mm(255.0), &font);
-    
-    // Add details
     let mut y_pos = 230.0;
     current_layer.use_text(&format!("Receipt ID: {}", payout_id), 12.0, Mm(30.0), Mm(y_pos), &font);
-    
     y_pos -= 10.0;
     current_layer.use_text(&format!("Date: {}", chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")), 12.0, Mm(30.0), Mm(y_pos), &font);
-    
     y_pos -= 10.0;
     current_layer.use_text(&format!("Recipient: {}", user_email), 12.0, Mm(30.0), Mm(y_pos), &font);
-    
     y_pos -= 15.0;
     current_layer.use_text(&format!("Amount: ${:.2} USD", amount), 14.0, Mm(30.0), Mm(y_pos), &font_bold);
-    
     y_pos -= 10.0;
     current_layer.use_text(&format!("Payment Method: {}", method.to_uppercase()), 12.0, Mm(30.0), Mm(y_pos), &font);
-    
     if let Some(ref tx_ref) = transaction_ref {
         y_pos -= 10.0;
         current_layer.use_text(&format!("Transaction Reference: {}", tx_ref), 12.0, Mm(30.0), Mm(y_pos), &font);
     }
-    
     y_pos -= 20.0;
     current_layer.use_text("This receipt confirms the payout has been processed.", 10.0, Mm(30.0), Mm(y_pos), &font);
     y_pos -= 5.0;
     current_layer.use_text("Please keep this document for your records.", 10.0, Mm(30.0), Mm(y_pos), &font);
-    
-    // Footer
     current_layer.use_text("Sweet Models Enterprise - Financial Department", 8.0, Mm(60.0), Mm(20.0), &font);
     current_layer.use_text("www.sweetmodels.com", 8.0, Mm(75.0), Mm(15.0), &font);
-    
-    // Save PDF
     doc.save(&mut std::io::BufWriter::new(
         std::fs::File::create(&filepath).map_err(|e| format!("Failed to create PDF file: {}", e))?
     )).map_err(|e| format!("Failed to save PDF: {}", e))?;
-    
     tracing::info!("📄 PDF receipt generated: {}", filepath);
-    
     Ok(format!("/uploads/receipts/{}", filename))
+    */
 }
 
 /// POST /api/admin/payout
