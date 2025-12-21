@@ -15,7 +15,7 @@ class PaymentsProvider extends ChangeNotifier {
   Future<void> fetchBalance() async {
     isLoading = true;
     notifyListeners();
-    final url = Uri.parse('http://localhost:3000/api/admin/user-balance/$userId');
+    final url = Uri.parse('https://sweet-models-enterprise-production.up.railway.app/api/admin/user-balance/$userId');
     final res = await http.get(url, headers: {
       'Authorization': 'Bearer $token',
     });
@@ -30,7 +30,7 @@ class PaymentsProvider extends ChangeNotifier {
   Future<void> fetchHistory() async {
     isLoading = true;
     notifyListeners();
-    final url = Uri.parse('http://localhost:3000/api/admin/payouts/$userId');
+    final url = Uri.parse('https://sweet-models-enterprise-production.up.railway.app/api/admin/payouts/$userId');
     final res = await http.get(url, headers: {
       'Authorization': 'Bearer $token',
     });
@@ -43,7 +43,7 @@ class PaymentsProvider extends ChangeNotifier {
   }
 
   Future<bool> processPayout(double amount, String method, String reference) async {
-    final url = Uri.parse('http://localhost:3000/api/admin/payout');
+    final url = Uri.parse('https://sweet-models-enterprise-production.up.railway.app/api/admin/payout');
     final res = await http.post(url,
       headers: {
         'Authorization': 'Bearer $token',

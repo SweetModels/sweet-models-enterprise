@@ -3,13 +3,11 @@
 
 class AppConfig {
   // Entorno actual
-  static const String environment = 'development';
+  static const String environment = 'production';
 
   // URLs del backend
-  // IMPORTANTE: Para Android Emulator usa 10.0.2.2
-  //             Para iOS Simulator usa localhost
-  //             Para dispositivo físico usa la IP de tu máquina
-  static const String backendUrl = 'http://10.0.2.2:3000';
+  // Producción en Railway con HTTPS seguro
+  static const String backendUrl = 'https://sweet-models-enterprise-production.up.railway.app/';
 
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 10);

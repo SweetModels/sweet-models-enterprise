@@ -137,10 +137,8 @@ class DashboardData {
 }
 
 class ApiService {
-  // Para Android Emulator: http://10.0.2.2:3000
-  // Para iPhone/Android físico: http://192.168.1.50:3000 (cambiar IP según tu red)
-  // Para desarrollo local: http://localhost:3000
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  // Producción en Railway con HTTPS seguro
+  static const String baseUrl = 'https://sweet-models-enterprise-production.up.railway.app/';
   
   late final Dio _dio;
   String? _accessToken;

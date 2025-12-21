@@ -85,16 +85,8 @@ class ApiService {
   LoginResponse? _currentUser;
 
   ApiService() {
-    // Detectar si es emulador Android o plataforma nativa
-    if (kIsWeb) {
-      baseUrl = 'http://localhost:3000';
-    } else if (Platform.isAndroid) {
-      baseUrl = 'http://10.0.2.2:3000'; // Emulador Android
-    } else if (Platform.isIOS) {
-      baseUrl = 'http://localhost:3000'; // Simulator iOS
-    } else {
-      baseUrl = 'http://localhost:3000'; // Fallback
-    }
+    // Producción en Railway con HTTPS seguro - todas las plataformas
+    baseUrl = 'https://sweet-models-enterprise-production.up.railway.app/';
 
     debugPrint('🔌 ApiService initialized with baseUrl: $baseUrl');
   }
