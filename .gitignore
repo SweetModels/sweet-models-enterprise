@@ -174,3 +174,10 @@ create_operations_tables.sql
 *.aab
 mobile_app/build_outputs/
 sweet_models_enterprise/.git_nested_backup/
+
+# Global env files should not be committed
+*.env
+*.env.prod
+
+# Specific sensitive env in vendored folder
+sweet_models_enterprise/backup_protocol.env
