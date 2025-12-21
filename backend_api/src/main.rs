@@ -23,6 +23,7 @@ use std::path::Path;
 use sha2::{Sha256, Digest};
 use hex;
 use std::collections::HashMap;
+use crate::state::AppState;
 
 // Módulos personalizados
 mod models;
@@ -899,7 +900,7 @@ async fn health() -> &'static str {
 
 // SETUP ADMIN
 async fn setup_admin(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🔧 Creating admin user: {}", payload.email);
@@ -925,7 +926,7 @@ async fn setup_admin(
     .bind(&payload.email)
     .bind(&hashed)
     .bind("admin")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -942,7 +943,7 @@ async fn setup_admin(
 
 // SETUP MODELO USER (for testing)
 async fn setup_modelo(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🔧 Creating modelo test user");
     
@@ -962,7 +963,7 @@ async fn setup_modelo(
     .bind(email)
     .bind(&hashed)
     .bind("model")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -980,7 +981,7 @@ async fn setup_modelo(
 
 // LOGIN
 async fn login_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🔐 Login attempt: {}", payload.email);
@@ -989,7 +990,7 @@ async fn login_handler(
         "SELECT id, email, password_hash, role FROM users WHERE email = $1"
     )
     .bind(&payload.email)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1024,7 +1025,7 @@ async fn login_handler(
     .bind(user_id)
     .bind(&refresh_token_hash)
     .bind(expires_at)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token storage error: {}", e)))?;
 
@@ -1045,7 +1046,7 @@ async fn login_handler(
 
 // REGISTER BASIC USER
 async fn register_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("📝 Registration: {}", payload.email);
@@ -1066,7 +1067,7 @@ async fn register_handler(
     .bind(&payload.email)
     .bind(&hashed)
     .bind("model")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| {
         if e.to_string().contains("duplicate") {
@@ -1089,7 +1090,7 @@ async fn register_handler(
 
 // REGISTER MODEL (ADVANCED)
 async fn register_model_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterModelPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("👤 Model registration: {}", payload.email);
@@ -1129,7 +1130,7 @@ async fn register_model_handler(
     .bind(&payload.phone)
     .bind(&payload.address)
     .bind(&payload.national_id)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| {
         if e.to_string().contains("duplicate") {
@@ -1154,7 +1155,7 @@ async fn register_model_handler(
 
 // UPDATE TRM (ADMIN ONLY)
 async fn update_trm_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<TrmUpdateRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("💱 TRM update request: {}", payload.trm_value);
@@ -1172,7 +1173,7 @@ async fn update_trm_handler(
         "#
     )
     .bind(payload.trm_value.to_string())
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1190,12 +1191,12 @@ async fn update_trm_handler(
 
 // GET CURRENT TRM
 async fn get_trm_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let result: Option<(String, String)> = sqlx::query_as(
         "SELECT config_value, updated_at::TEXT FROM financial_config WHERE config_key = 'trm_daily'"
     )
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1216,7 +1217,7 @@ async fn get_trm_handler(
 
 // CALCULATE PAYROLL
 async fn calculate_payroll_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<PayrollRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🧮 Payroll calculation request");
@@ -1228,7 +1229,7 @@ async fn calculate_payroll_handler(
         let result: Option<(String,)> = sqlx::query_as(
             "SELECT config_value FROM financial_config WHERE config_key = 'trm_daily'"
         )
-        .fetch_optional(&pool)
+        .fetch_optional(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1244,7 +1245,7 @@ async fn calculate_payroll_handler(
 
 // GET CAMERAS (ADMIN ONLY)
 async fn get_cameras_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("📹 Fetching cameras list");
 
@@ -1272,7 +1273,7 @@ async fn get_cameras_handler(
 
 // SEND OTP CODE
 async fn send_otp_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<SendOtpRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("📱 OTP request for phone: {}", payload.phone);
@@ -1299,7 +1300,7 @@ async fn send_otp_handler(
     .bind(&otp_code)
     .bind(expires_at)
     .bind(false)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1319,7 +1320,7 @@ async fn send_otp_handler(
 
 // VERIFY OTP CODE
 async fn verify_otp_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<VerifyOtpRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🔐 OTP verification for phone: {}", payload.phone);
@@ -1335,7 +1336,7 @@ async fn verify_otp_handler(
         "#
     )
     .bind(&payload.phone)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1362,7 +1363,7 @@ async fn verify_otp_handler(
     // Marcar OTP como usado
     sqlx::query("UPDATE otp_codes SET used = TRUE WHERE id = $1")
         .bind(otp_id)
-        .execute(&pool)
+        .execute(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1375,7 +1376,7 @@ async fn verify_otp_handler(
         "#
     )
     .bind(&payload.phone)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1397,7 +1398,7 @@ async fn verify_otp_handler(
 
 // UPLOAD KYC DOCUMENT
 async fn upload_kyc_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("📄 KYC document upload request");
@@ -1490,7 +1491,7 @@ async fn upload_kyc_handler(
     .bind(file_data.len() as i32)
     .bind(content_type.unwrap_or("image/jpeg".to_string()))
     .bind("pending")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| {
         if e.to_string().contains("duplicate") {
@@ -1515,7 +1516,7 @@ async fn upload_kyc_handler(
 
 // DASHBOARD (EXISTING)
 async fn get_dashboard(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("📊 Dashboard request");
 
@@ -1546,7 +1547,7 @@ async fn get_dashboard(
     let trm_result: Option<(String,)> = sqlx::query_as(
         "SELECT config_value FROM financial_config WHERE config_key = 'trm_daily'"
     )
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1603,7 +1604,7 @@ async fn financial_planning_handler(
 // ============================================================================
 
 async fn get_model_home(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let claims = require_role(&headers, "model").map_err(|s| (s, "Unauthorized".to_string()))?;
@@ -1639,7 +1640,7 @@ async fn get_model_home(
 
 // 🎮 GAMIFICATION: Get Model Stats (Rank, XP, Progress)
 async fn get_model_stats(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let claims = require_role(&headers, "model").map_err(|s| (s, "Unauthorized".to_string()))?;
@@ -1653,7 +1654,7 @@ async fn get_model_stats(
         "SELECT COALESCE(SUM(amount), 0)::float8 FROM points_ledger WHERE user_id = $1"
     )
     .bind(user_uuid)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to calculate XP: {}", e)))?;
     let total_xp: i64 = total_xp_f64.floor() as i64;
@@ -1684,7 +1685,7 @@ async fn get_model_stats(
     )
     .bind(user_uuid)
     .bind(today_start)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to get today's tokens: {}", e)))?;
     let today_tokens: i64 = today_tokens_f64.floor() as i64;
@@ -1716,7 +1717,7 @@ struct PenaltyItem {
 
 // 📕 MODEL: Recent penalties (last 3)
 async fn get_recent_penalties(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let claims = require_role(&headers, "model").map_err(|s| (s, "Unauthorized".to_string()))?;
@@ -1747,7 +1748,7 @@ async fn get_recent_penalties(
 }
 
 async fn sign_contract_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -1788,7 +1789,7 @@ async fn sign_contract_handler(
     .bind(user_uuid)
     .bind(path)
     .bind("unknown")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1799,7 +1800,7 @@ async fn sign_contract_handler(
 }
 
 async fn create_social_link(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<SocialLinkRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -1821,7 +1822,7 @@ async fn create_social_link(
     .bind(user_uuid)
     .bind(&platform)
     .bind(&payload.handle)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -1839,7 +1840,7 @@ async fn create_social_link(
 /// GET /api/mod/groups
 /// Retorna los grupos asignados al moderador actual
 async fn get_moderator_groups(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
     let claims = require_role(&headers, "moderator").map_err(|s| (s, "Unauthorized".to_string()))?;
@@ -1871,7 +1872,7 @@ async fn get_moderator_groups(
 /// POST /api/mod/production
 /// Registra tokens de producción diarios y auditoría
 async fn register_production_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<ProductionLogRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -1902,7 +1903,7 @@ async fn register_production_handler(
     .bind(production_date)
     .bind(payload.tokens as f64)
     .bind(user_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert production log: {}", e)))?;
 
@@ -1924,7 +1925,7 @@ async fn register_production_handler(
     .bind(audit_value)
     .bind(user_id)
     .bind("0.0.0.0")
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Audit trail error: {}", e)))?;
 
@@ -1934,7 +1935,7 @@ async fn register_production_handler(
     )
     .bind(group_id)
     .bind(production_date)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error calculating daily total: {}", e)))?;
 
@@ -2009,7 +2010,7 @@ async fn get_financial_history(
 /// POST /auth/refresh
 /// Renew access token using refresh token
 async fn refresh_token_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RefreshTokenPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("🔄 Token refresh attempt");
@@ -2026,7 +2027,7 @@ async fn refresh_token_handler(
            AND rt.revoked_at IS NULL"
     )
     .bind(&token_hash)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2045,7 +2046,7 @@ async fn refresh_token_handler(
     // Revoke old refresh token
     sqlx::query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1")
         .bind(&token_hash)
-        .execute(&pool)
+        .execute(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token revocation error: {}", e)))?;
     
@@ -2057,7 +2058,7 @@ async fn refresh_token_handler(
     .bind(user_id)
     .bind(&new_refresh_token_hash)
     .bind(new_expires_at)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Token storage error: {}", e)))?;
     
@@ -2077,7 +2078,7 @@ async fn refresh_token_handler(
 /// POST /auth/logout
 /// Revoke refresh token
 async fn logout_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RefreshTokenPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     tracing::info!("👋 Logout request");
@@ -2086,7 +2087,7 @@ async fn logout_handler(
     
     sqlx::query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1")
         .bind(&token_hash)
-        .execute(&pool)
+        .execute(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Logout error: {}", e)))?;
     
@@ -2105,7 +2106,7 @@ async fn logout_handler(
 /// GET /api/notifications
 /// Get user notifications (paginated)
 async fn get_notifications(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2168,7 +2169,7 @@ async fn get_notifications(
            AND (expires_at IS NULL OR expires_at > NOW())"
     )
     .bind(user_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .unwrap_or(0);
     
@@ -2185,7 +2186,7 @@ async fn get_notifications(
 /// POST /api/notifications/mark-read
 /// Mark notifications as read
 async fn mark_notifications_read(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<MarkReadPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2209,7 +2210,7 @@ async fn mark_notifications_read(
     )
     .bind(user_id)
     .bind(&notification_ids)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2225,7 +2226,7 @@ async fn mark_notifications_read(
 /// POST /api/notifications/register-device
 /// Register device token for push notifications
 async fn register_device_token(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<RegisterDeviceTokenPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2246,7 +2247,7 @@ async fn register_device_token(
     .bind(&payload.token)
     .bind(&payload.platform)
     .bind(&payload.device_info)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2259,7 +2260,7 @@ async fn register_device_token(
 /// POST /api/admin/notifications/send
 /// Send notification to user(s) - Admin only
 async fn send_notification(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<CreateNotificationPayload>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2285,7 +2286,7 @@ async fn send_notification(
     .bind(&payload.data)
     .bind(&payload.image_url)
     .bind(&payload.action_url)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2305,7 +2306,7 @@ async fn send_notification(
 /// GET /api/admin/dashboard
 /// Get comprehensive admin dashboard statistics
 async fn get_admin_dashboard(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let _claims = require_roles(&headers, &["admin"])?;
@@ -2314,7 +2315,7 @@ async fn get_admin_dashboard(
     
     // Refresh materialized view
     sqlx::query("SELECT refresh_admin_dashboard()")
-        .execute(&pool)
+        .execute(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to refresh dashboard: {}", e)))?;
     
@@ -2322,7 +2323,7 @@ async fn get_admin_dashboard(
     let row = sqlx::query(
         "SELECT * FROM admin_dashboard_stats LIMIT 1"
     )
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2357,7 +2358,7 @@ async fn get_admin_dashboard(
 /// GET /api/admin/export
 /// Export data to CSV/Excel/PDF
 async fn export_data(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2381,7 +2382,7 @@ async fn export_data(
     .bind(user_id)
     .bind(export_type)
     .bind(&format)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -2463,7 +2464,7 @@ async fn generate_payout_receipt(
 /// POST /api/admin/payout
 /// Registra un pago y devuelve saldo pendiente actualizado
 async fn process_payout(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(payload): Json<PayoutRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2512,7 +2513,7 @@ async fn process_payout(
     .bind(&payload.reference_id)
     .bind(&payload.notes)
     .bind(admin_uuid)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert payout: {}", e)))?;
 
@@ -2542,7 +2543,7 @@ async fn process_payout(
 /// GET /api/admin/payouts/{user_id}
 /// Historial de pagos para un usuario
 async fn get_payout_history_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     axum::extract::Path(user_id): axum::extract::Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2601,7 +2602,7 @@ async fn get_payout_history_handler(
 /// GET /api/admin/user-balance/:user_id
 /// Get user balance details
 async fn get_user_balance_handler(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     axum::extract::Path(user_id): axum::extract::Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -2612,7 +2613,7 @@ async fn get_user_balance_handler(
 
     let email: Option<String> = sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
         .bind(user_uuid)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
 
@@ -2624,7 +2625,7 @@ async fn get_user_balance_handler(
         "SELECT created_at::text FROM payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
     )
     .bind(user_uuid)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .unwrap_or(None);
 
@@ -2671,11 +2672,14 @@ async fn main() {
         .expect("Failed to create MongoDB client");
     println!("✅ Connected to MongoDB");
     tracing::info!("✅ Connected to MongoDB");
-    // Temporarily skip migration check - table already exists
-    // sqlx::migrate!("./migrations")
-    //     .run(&pool)
-    //     .await
-    //     .expect("Failed to run migrations");
+
+    // Create AppState with both databases
+    let state = AppState {
+        db: state.db.clone(),
+        mongo: mongo_client.clone(),
+    };
+
+    tracing::info!("🔄 Running migrations...");
 
     let app = Router::new()
         // Health first, simple OK for Railway
@@ -2739,7 +2743,7 @@ async fn main() {
             .route("/api/admin/payouts/:user_id", get(get_payout_history_handler))
             .route("/api/admin/user-balance/:user_id", get(get_user_balance_handler))
         .layer(CorsLayer::permissive())
-        .with_state((pool.clone(), mongo_client.clone()));
+        .with_state(state.clone());
 
     // Bind explicitly to 0.0.0.0:8080 for Railway healthcheck
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
@@ -2752,3 +2756,6 @@ async fn main() {
         .await
         .expect("Failed to start server");
 }
+
+
+
