@@ -893,12 +893,8 @@ async fn root() -> &'static str {
     "🏢 Sweet Models Enterprise API v2.0 - Advanced Financial System"
 }
 
-async fn health() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "status": "healthy",
-        "version": "2.0.0",
-        "features": ["doble_trm", "biometric_auth", "camera_monitoring"]
-    }))
+async fn health() -> &'static str {
+    "OK"
 }
 
 // SETUP ADMIN
@@ -2738,7 +2734,9 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    // Bind to 0.0.0.0 and use dynamic PORT with default 8080
+    let port = std::env::var("PORT").unwrap_or("8080".to_string());
+    let addr = format!("0.0.0.0:{}", port);
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
 
     tracing::info!("🚀 Server running on {}", addr);
