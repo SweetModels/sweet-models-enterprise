@@ -13,27 +13,33 @@ final apiServiceProvider = Provider<ApiService>((ref) {
 
 // Modelos de datos
 class LoginResponse {
-  final String accessToken;
-  final String tokenType;
-  final int expiresIn;
+  final String token;
+  final String? refreshToken;
+  final String? tokenType;
+  final int? expiresIn;
   final String role;
   final String userId;
+  final String? name;
 
   LoginResponse({
-    required this.accessToken,
-    required this.tokenType,
-    required this.expiresIn,
+    required this.token,
+    this.refreshToken,
+    this.tokenType,
+    this.expiresIn,
     required this.role,
     required this.userId,
+    this.name,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
-      accessToken: json['access_token'] as String,
-      tokenType: json['token_type'] as String,
-      expiresIn: json['expires_in'] as int,
+      token: json['token'] as String? ?? json['access_token'] as String,
+      refreshToken: json['refresh_token'] as String?,
+      tokenType: json['token_type'] as String?,
+      expiresIn: json['expires_in'] as int?,
       role: json['role'] as String,
       userId: json['user_id'] as String,
+      name: json['name'] as String?,
     );
   }
 }
@@ -131,7 +137,10 @@ class DashboardData {
 }
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000';
+  // Para Android Emulator: http://10.0.2.2:3000
+  // Para iPhone/Android físico: http://192.168.1.50:3000 (cambiar IP según tu red)
+  // Para desarrollo local: http://localhost:3000
+  static const String baseUrl = 'http://10.0.2.2:3000';
   
   late final Dio _dio;
   String? _accessToken;
@@ -195,7 +204,7 @@ class ApiService {
   Future<LoginResponse> login(String email, String password) async {
     try {
       final response = await _dio.post(
-        '/login',
+        '/api/auth/login',
         data: {
           'email': email,
           'password': password,
@@ -205,7 +214,7 @@ class ApiService {
       final loginResponse = LoginResponse.fromJson(response.data);
       
       // Guardar token y datos del usuario
-      await _saveToken(loginResponse.accessToken);
+      await _saveToken(loginResponse.token);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_role', loginResponse.role);
       await prefs.setString('user_id', loginResponse.userId);

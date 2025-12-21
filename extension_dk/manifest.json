@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Studios DK Telemetry",
+  "version": "1.0.0",
+  "description": "Captura producción en tiempo real desde plataformas y la envía al ERP.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "*://*.chaturbate.com/*",
+    "*://*.stripchat.com/*",
+    "*://*.camsoda.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Studios DK Telemetry"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.chaturbate.com/*"],
+      "js": ["scrapers/chaturbate.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.stripchat.com/*"],
+      "js": ["scrapers/stripchat.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.camsoda.com/*"],
+      "js": ["scrapers/camsoda.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

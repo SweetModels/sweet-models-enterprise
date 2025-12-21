@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "357823921558",
+    "project_id": "sweet-models-enterprise",
+    "storage_bucket": "sweet-models-enterprise.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:357823921558:android:94da33703f3350d7d931b7",
+        "android_client_info": {
+          "package_name": "com.sweetmodels.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyVYFmvvYsPXW1LmnXIrQXQU_rq16HrhQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
 import 'dashboard_screen.dart';
 import 'register_screen.dart';
@@ -20,11 +22,23 @@ import 'screens/admin_stats_screen.dart';
 import 'screens/model_home_screen.dart';
 import 'screens/contract_screen.dart';
 import 'screens/moderator_console_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
 // import 'package:media_kit/media_kit.dart'; // Temporalmente deshabilitado
 
-void main() {
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
+
+Future<void> main() async {
   // Inicializar media_kit para reproducción de video
   // MediaKit.ensureInitialized(); // Deshabilitado hasta configurar libmpv-2.dll
+  WidgetsFlutterBinding.ensureInitialized();
+  // Inicializar Firebase solo en Android (usa google-services.json)
+  try {
+    if (!kIsWeb && Platform.isAndroid) {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      await FirebaseMessaging.instance.requestPermission();
+    }
+  } catch (_) {}
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -62,7 +76,7 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.interTextTheme(
           ThemeData(brightness: Brightness.dark).textTheme,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 8,
           color: const Color(0xFF1D1E33),
           shape: RoundedRectangleBorder(
@@ -87,7 +101,9 @@ class MyApp extends StatelessWidget {
         '/cameras': (context) => const CameraMonitorScreen(),
         '/cctv_grid': (context) => const CctvGridScreen(),
         '/admin_stats': (context) => const AdminStatsScreen(),
+        '/admin_dashboard': (context) => const AdminDashboardScreen(),
         '/register_advanced': (context) => const RegisterModelScreenAdvanced(),
+        '/model_home': (context) => const ModelHomeScreen(),
         '/model/home': (context) => const ModelHomeScreen(),
         '/model/contract': (context) => const ContractScreen(),
         '/moderator/console': (context) => const ModeratorConsoleScreen(),

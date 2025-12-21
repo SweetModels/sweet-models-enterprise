@@ -1,25 +1,717 @@
-import 'dart:math';
-
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/model_service.dart';
+import 'login_screen.dart';
+import 'kyc_upload_screen.dart';
+import '../widgets/attendance_button.dart';
 
-import '../api_service.dart';
-import '../models/model_home.dart';
+// Colors - Sweet Models Gamification Theme
+const Color _bgDarkPurple = Color(0xFF2D1B3D);
+const Color _bgLightPurple = Color(0xFF4A2D5E);
+const Color _accentPink = Color(0xFFE91E63);
+const Color _accentDorado = Color(0xFFD4AF37);
+const Color _successGreen = Color(0xFF4CAF50);
+const Color _warningOrange = Color(0xFFFFA726);
+const Color _whiteText = Color(0xFFFFFFFF);
+const Color _greyText = Color(0xFFB0B0B0);
 
-final modelHomeProvider = FutureProvider<ModelHomeStats>((ref) async {
-  final api = ref.watch(apiServiceProvider);
-  return api.getModelHomeStats();
-});
+/// Model Statistics Response
+class ModelStats {
+  final int xp;
+  final String rank;
+  final String icon;
+  final int nextLevelIn;
+  final double progress;
+  final int todayTokens;
+  final double todayEarningsCop;
 
-class ModelHomeScreen extends ConsumerStatefulWidget {
-  const ModelHomeScreen({super.key});
+  ModelStats({
+    required this.xp,
+    required this.rank,
+    required this.icon,
+    required this.nextLevelIn,
+    required this.progress,
+    required this.todayTokens,
+    required this.todayEarningsCop,
+  });
+
+  factory ModelStats.fromJson(Map<String, dynamic> json) {
+    return ModelStats(
+      xp: json['xp'] as int? ?? 0,
+      rank: json['rank'] as String? ?? 'Novice',
+      icon: json['icon'] as String? ?? '🐣',
+      nextLevelIn: json['next_level_in'] as int? ?? 0,
+      progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+      todayTokens: json['today_tokens'] as int? ?? 0,
+      todayEarningsCop: (json['today_earnings_cop'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  factory ModelStats.empty() {
+    return ModelStats(
+      xp: 0,
+      rank: 'Novice',
+      icon: '🐣',
+      nextLevelIn: 20000,
+      progress: 0.0,
+      todayTokens: 0,
+      todayEarningsCop: 0.0,
+    );
+  }
+}
+
+/// Model Home Screen - Gamification Dashboard
+class ModelHomeScreen extends StatefulWidget {
+  const ModelHomeScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ModelHomeScreen> createState() => _ModelHomeScreenState();
+  State<ModelHomeScreen> createState() => _ModelHomeScreenState();
 }
+
+class _ModelHomeScreenState extends State<ModelHomeScreen> {
+  late ModelService _modelService;
+  late Future<ModelStats> _statsFuture;
+  late Future<List<PenaltyEvent>> _penaltiesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _modelService = ModelService();
+    _statsFuture = _modelService.getModelStats();
+    _penaltiesFuture = _modelService.getRecentPenalties();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bgDarkPurple,
+      appBar: _buildAppBar(),
+      body: FutureBuilder<ModelStats>(
+        future: _statsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(_accentDorado),
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return _buildErrorState(snapshot.error.toString());
+          }
+
+          if (!snapshot.hasData) {
+            return _buildEmptyState();
+          }
+
+          final stats = snapshot.data!;
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _statsFuture = _modelService.getModelStats();
+                _penaltiesFuture = _modelService.getRecentPenalties();
+              });
+            },
+            color: _accentDorado,
+            backgroundColor: _bgLightPurple,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // 🕐 Attendance Button - First thing to see
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _bgLightPurple.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _accentDorado.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: AttendanceButton(
+                      onStatusChanged: () {
+                        setState(() {
+                          _statsFuture = _modelService.getModelStats();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Last Events / Penalties alert
+                  FutureBuilder<List<PenaltyEvent>>(
+                    future: _penaltiesFuture,
+                    builder: (context, snap) {
+                      if (snap.connectionState == ConnectionState.waiting) {
+                        return const SizedBox.shrink();
+                      }
+                      final events = snap.data ?? [];
+                      if (events.isEmpty) return const SizedBox.shrink();
+
+                      final now = DateTime.now();
+                      final hasToday = events.any((e) => e.createdAt.year == now.year && e.createdAt.month == now.month && e.createdAt.day == now.day);
+
+                      return Column(
+                        children: [
+                          if (hasToday)
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.red, width: 2),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text('⚠️', style: TextStyle(fontSize: 22)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Sanción Aplicada: ${events.first.reason} (${events.first.xpDeduction} XP)',
+                                      style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          _buildRecentEventsList(events),
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    },
+                  ),
+                  // Welcome Message
+                  _buildWelcomeSection(stats),
+                  const SizedBox(height: 28),
+
+                  // Main Progress Circle
+                  _buildProgressCircle(stats),
+                  const SizedBox(height: 28),
+
+                  // Motivational Message
+                  _buildMotivationalMessage(stats),
+                  const SizedBox(height: 28),
+
+                  // Stats Cards
+                  _buildStatsCards(stats),
+                  const SizedBox(height: 28),
+
+                  // Daily Goal Card
+                  _buildDailyGoalCard(stats),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: _buildActionButton(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _bgLightPurple,
+      elevation: 0,
+      title: Text(
+        '✨ Sweet Models - Level Up! ✨',
+        style: GoogleFonts.poppins(
+          color: _accentPink,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.verified_user, color: Color(0xFF4CAF50)),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const KycUploadScreen(),
+              ),
+            );
+          },
+          tooltip: 'Verificación KYC',
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout, color: Color(0xFFF44336)),
+          onPressed: _logout,
+          tooltip: 'Logout',
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _accentPink.withOpacity(0.3),
+                _accentDorado.withOpacity(0.3),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeSection(ModelStats stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '🎮 Welcome Back!',
+          style: GoogleFonts.poppins(
+            color: _whiteText,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'You\'re a ${stats.rank} ${stats.icon} - Keep climbing!',
+          style: GoogleFonts.poppins(
+            color: _greyText,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressCircle(ModelStats stats) {
+    return Center(
+      child: CircularPercentIndicator(
+        radius: 120,
+        lineWidth: 12,
+        percent: stats.progress.clamp(0.0, 1.0),
+        center: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              stats.icon,
+              style: const TextStyle(fontSize: 60),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              stats.rank,
+              style: GoogleFonts.poppins(
+                color: _accentPink,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${(stats.progress * 100).toStringAsFixed(0)}%',
+              style: GoogleFonts.poppins(
+                color: _accentDorado,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        progressColor: _accentPink,
+        backgroundColor: _bgLightPurple,
+        circularStrokeCap: CircularStrokeCap.round,
+        animation: true,
+        animationDuration: 1000,
+      ),
+    );
+  }
+
+  Widget _buildMotivationalMessage(ModelStats stats) {
+    String message;
+    Color messageColor;
+
+    if (stats.progress < 0.3) {
+      message = '🔥 ¡Vamos a calentar motores! Necesitas ${stats.nextLevelIn} XP más';
+      messageColor = _warningOrange;
+    } else if (stats.progress > 0.8) {
+      message = '🚀 ¡Casi tocas el cielo! Solo ${stats.nextLevelIn} XP para el siguiente nivel';
+      messageColor = _accentPink;
+    } else {
+      message = '💪 ¡Vas muy bien! ${stats.nextLevelIn} XP para ascender';
+      messageColor = _successGreen;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: messageColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: messageColor, width: 2),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.poppins(
+                color: messageColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards(ModelStats stats) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            title: 'Today',
+            value: '${stats.todayTokens}',
+            subtitle: 'Tokens',
+            color: _successGreen,
+            icon: '🎯',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            title: 'Earnings',
+            value: '\$${stats.todayEarningsCop.toStringAsFixed(0)}',
+            subtitle: 'COP',
+            color: _accentDorado,
+            icon: '💰',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+    required String icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _bgLightPurple,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: _greyText,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                icon,
+                style: const TextStyle(fontSize: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.poppins(
+              color: _greyText,
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyGoalCard(ModelStats stats) {
+    // Assume daily goal is 100 tokens
+    const dailyGoal = 100;
+    final dailyProgress = (stats.todayTokens / dailyGoal).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _bgLightPurple,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _accentPink.withOpacity(0.3), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '📊 Daily Goal',
+                style: GoogleFonts.poppins(
+                  color: _whiteText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '${stats.todayTokens}/$dailyGoal',
+                style: GoogleFonts.poppins(
+                  color: _accentPink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LinearPercentIndicator(
+            lineHeight: 8,
+            percent: dailyProgress,
+            progressColor: _accentPink,
+            backgroundColor: _bgDarkPurple,
+            barRadius: const Radius.circular(4),
+            animation: true,
+            animationDuration: 500,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            dailyProgress >= 1.0
+                ? '🎉 Daily goal completed!'
+                : 'Need ${(dailyGoal - stats.todayTokens).toStringAsFixed(0)} more tokens',
+            style: GoogleFonts.poppins(
+              color: dailyProgress >= 1.0 ? _successGreen : _greyText,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentEventsList(List<PenaltyEvent> events) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _bgLightPurple,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.3), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Últimos Eventos',
+            style: GoogleFonts.poppins(
+              color: _whiteText,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...events.map((e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    const Text('⚠️'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${e.reason} (${e.xpDeduction} XP)',
+                        style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                    Text(
+                      _formatShortDate(e.createdAt),
+                      style: GoogleFonts.poppins(color: _greyText, fontSize: 11),
+                    )
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  String _formatShortDate(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _bgLightPurple,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Color(0xFFF44336), width: 2),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.error_outline, color: Color(0xFFF44336), size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Connection Error',
+                  style: GoogleFonts.poppins(
+                    color: Color(0xFFF44336),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  style: GoogleFonts.poppins(
+                    color: _greyText,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _statsFuture = _modelService.getModelStats();
+              });
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _accentDorado,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Text(
+        'No data available',
+        style: GoogleFonts.poppins(
+          color: _greyText,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '💸 Request payment feature coming soon!',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: _accentPink,
+          ),
+        );
+      },
+      backgroundColor: _accentPink,
+      icon: const Icon(Icons.attach_money),
+      label: Text(
+        'REQUEST PAYMENT',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: _bgLightPurple,
+        title: Text(
+          'Confirm Logout',
+          style: GoogleFonts.poppins(
+            color: _whiteText,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: GoogleFonts.poppins(color: _greyText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: _accentDorado),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('access_token');
+              await _modelService.clearCache();
+
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (_) => false,
+                );
+              }
+            },
+            child: Text(
+              'Logout',
+              style: GoogleFonts.poppins(
+                color: Color(0xFFF44336),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class _ModelHomeScreenState extends ConsumerState<ModelHomeScreen> {
   late final ConfettiController _confettiController;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'biometric_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/admin_dashboard_screen.dart';
+import 'screens/model_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -24,9 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Biometría deshabilitada en Windows (flutter_secure_storage no configurado)
-    // _checkBiometricStatus();
-    // _attemptBiometricLogin();
+    _checkBiometricStatus();
+    _attemptBiometricLogin();
   }
 
   @override
@@ -37,17 +38,24 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _checkBiometricStatus() async {
-    // DESHABILITADO EN WINDOWS - flutter_secure_storage no configurado
-    // final status = await _biometricService.checkBiometricStatus();
+    final hasHardware = await _biometricService.hasBiometricHardware();
+    final available = await _biometricService.isBiometricAvailable();
+    final biometrics = await _biometricService.getAvailableBiometrics();
+
     setState(() {
-      _biometricAvailable = false;  // Deshabilitado en Windows
-      _biometricType = '';
+      _biometricAvailable = hasHardware && available;
+      _biometricType = biometrics.isNotEmpty ? biometrics.first.name : '';
     });
   }
 
   Future<void> _attemptBiometricLogin() async {
-    // DESHABILITADO - flutter_secure_storage no configurado en Windows
-    return;
+    final session = await _biometricService.loginWithBiometrics();
+    if (session == null) return;
+
+    // Aquí podrías usar el token guardado; para ahora solo navega.
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+    }
   }
 
   Future<void> _login() async {
@@ -63,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
 
-      final token = response.accessToken;
+      final token = response.token;
       final role = response.role;
       final userId = response.userId;
 
@@ -81,8 +89,20 @@ class _LoginScreenState extends State<LoginScreen> {
         // final isBiometricEnabled = await _biometricService.isBiometricEnabled();
         // if (!isBiometricEnabled && _biometricAvailable) { ... }
 
-        // Navegar al dashboard inmediatamente
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        // Navegar al dashboard según el rol del usuario
+        if (role == 'admin') {
+          Navigator.of(context).pushReplacementNamed(
+            '/admin_dashboard',
+            arguments: AdminDashboardScreen(),
+          );
+        } else if (role == 'model') {
+          Navigator.of(context).pushReplacementNamed(
+            '/model_home',
+            arguments: ModelHomeScreen(),
+          );
+        } else {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        }
       }
     } catch (e) {
       if (mounted) {

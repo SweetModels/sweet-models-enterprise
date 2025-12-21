@@ -1,0 +1,4 @@
+{
+  "enable-windows-desktop": true,
+  "windows-target-platform": "win32"
+}

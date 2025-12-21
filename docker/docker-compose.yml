@@ -33,6 +33,35 @@ services:
     networks:
       - sweet_net
 
+  minio:
+    image: minio/minio:latest
+    container_name: sme_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-password_super_seguro}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio_data:/data
+    networks:
+      - sweet_net
+
+  createbuckets:
+    image: minio/mc:latest
+    container_name: sme_minio_mc
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      mc alias set minio http://minio:9000 ${MINIO_ROOT_USER:-admin} ${MINIO_ROOT_PASSWORD:-password_super_seguro} &&
+      mc mb --ignore-existing minio/sweet-media &&
+      mc anonymous set public minio/sweet-media
+    networks:
+      - sweet_net
+
 volumes:
   pgdata:
 

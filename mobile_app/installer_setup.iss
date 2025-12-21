@@ -2,7 +2,12 @@
 ; Genera instalador profesional para Windows con asistente multi-idioma
 
 #define MyAppName "Sweet Models Enterprise"
+#ifndef MyAppVersion
 #define MyAppVersion "1.0.0"
+#endif
+#ifndef MyAppVersionInfo
+#define MyAppVersionInfo "1.0.0.0"
+#endif
 #define MyAppPublisher "Sweet Models"
 #define MyAppURL "https://github.com/SweetModels/sweet-models-enterprise"
 #define MyAppExeName "sweet_models_mobile.exe"
@@ -20,7 +25,9 @@ AppUpdatesURL={#MyAppURL}/releases
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
+#ifexist "..\LICENSE"
 LicenseFile=..\LICENSE
+#endif
 InfoBeforeFile=README.md
 OutputDir=build\windows\installer
 OutputBaseFilename=SweetModelsEnterprise-Setup-{#MyAppVersion}
@@ -34,7 +41,7 @@ PrivilegesRequired=admin
 DisableProgramGroupPage=yes
 DisableWelcomePage=no
 UninstallDisplayIcon={app}\{#MyAppExeName}
-VersionInfoVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription=Sistema de gestión empresarial para Sweet Models
 VersionInfoCopyright=Copyright (C) 2025 {#MyAppPublisher}

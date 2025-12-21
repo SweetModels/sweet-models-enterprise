@@ -7,7 +7,14 @@
 # ============================================================================
 backend_api/target/
 backend_api/**/*.rs.bk
+backend_api/**/*.rs.backup
+backend_api/**/*.backup
 backend_api/Cargo.lock
+sweet_models_enterprise/backend_api/target/
+sweet_models_enterprise/backend_api/**/*.rs.bk
+sweet_models_enterprise/backend_api/**/*.rs.backup
+sweet_models_enterprise/backend_api/**/*.backup
+sweet_models_enterprise/backend_api/Cargo.lock
 
 # ============================================================================
 # FLUTTER / DART

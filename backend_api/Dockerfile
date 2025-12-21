@@ -1,7 +1,7 @@
 # ============================================
 # ETAPA 1: BUILDER - Compilación con Rust
 # ============================================
-FROM rust:1.84-alpine AS builder
+FROM rust:1.92-alpine AS builder
 
 WORKDIR /app
 
@@ -11,11 +11,9 @@ RUN apk add --no-cache musl-dev openssl-dev pkgconfig
 # Copiar manifiestos para cachear dependencias
 COPY Cargo.toml Cargo.lock ./
 
-# Crear estructura dummy para cachear dependencias
-RUN mkdir src && \
-    echo "fn main() {println!(\"dummy\");}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
+# Crear estructura mínima para cachear dependencias con versión de Cargo compatible
+# Nota: Evitamos compilar dependencias con toolchains viejas que fallen por edition2024
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs && cargo fetch
 
 # Copiar código real y migraciones
 COPY src ./src

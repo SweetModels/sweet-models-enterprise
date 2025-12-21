@@ -30,6 +30,25 @@ calamine = "0.24" # Excel generation
 rust_xlsxwriter = "0.68"
 pdf_lib = { package = "printpdf", version = "0.7" }
 
+# Binary targets
+[[bin]]
+name = "backend_api"
+path = "src/main.rs"
+
+[[bin]]
+name = "main_auth"
+path = "src/main_auth.rs"
+
+[[bin]]
+name = "gen_hash"
+path = "src/bin/gen_hash.rs"
+
+[profile.dev]
+default-run = "backend_api"
+
+[profile.release]
+opt-level = 3
+
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }
 hyper = { version = "1.0", features = ["full"] }

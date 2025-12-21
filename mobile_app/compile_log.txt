@@ -1,0 +1,13 @@
+Launching lib\main.dart on Windows in debug mode...
+Building Windows application...                                 
+CMake Error at CMakeLists.txt:3 (project):
+  Generator
+
+    Visual Studio 16 2019
+
+  could not find any instance of Visual Studio.
+
+
+
+Building Windows application...                                    273ms
+Error: Unable to generate build files

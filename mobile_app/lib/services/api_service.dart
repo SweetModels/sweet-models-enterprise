@@ -10,28 +10,34 @@ import 'dart:io' show Platform;
 
 /// Respuesta de login desde el backend
 class LoginResponse {
-  final String accessToken;
-  final String tokenType;
-  final int expiresIn;
+  final String token; // Cambio de accessToken a token
+  final String? tokenType;
+  final int? expiresIn;
   final String role;
   final String userId;
+  final String? refreshToken;
+  final String? name;
 
   LoginResponse({
-    required this.accessToken,
-    required this.tokenType,
-    required this.expiresIn,
+    required this.token,
+    this.tokenType,
+    this.expiresIn,
     required this.role,
     required this.userId,
+    this.refreshToken,
+    this.name,
   });
 
   /// Convierte JSON a LoginResponse
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
-      accessToken: json['access_token'] as String,
-      tokenType: json['token_type'] as String,
-      expiresIn: json['expires_in'] as int,
+      token: json['token'] as String? ?? json['access_token'] as String,
+      tokenType: json['token_type'] as String?,
+      expiresIn: json['expires_in'] as int?,
       role: json['role'] as String,
       userId: json['user_id'] as String,
+      refreshToken: json['refresh_token'] as String?,
+      name: json['name'] as String?,
     );
   }
 
@@ -128,7 +134,7 @@ class ApiService {
       debugPrint('🔐 Attempting login for: $email');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('$baseUrl/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -145,7 +151,7 @@ class ApiService {
         // Parsear respuesta
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         _currentUser = LoginResponse.fromJson(data);
-        _accessToken = _currentUser!.accessToken;
+        _accessToken = _currentUser!.token;
 
         debugPrint('✅ Login successful');
         debugPrint('🎫 JWT Access Token: ${_accessToken!.substring(0, 50)}...');

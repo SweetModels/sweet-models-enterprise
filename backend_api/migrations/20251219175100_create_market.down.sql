@@ -1,0 +1,3 @@
+-- Drop tables
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS products CASCADE;

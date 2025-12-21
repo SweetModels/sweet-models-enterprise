@@ -13,9 +13,8 @@ use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use uuid::Uuid;
 use chrono::{self, NaiveDate, Utc, Duration, Datelike};
-use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation};
 use argon2::{Argon2, PasswordHasher, PasswordHash, PasswordVerifier};
-use argon2::password_hash::SaltString;
+use argon2::password_hash::{SaltString, rand_core::OsRng};
 use rand::{thread_rng, Rng};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs;
@@ -25,12 +24,21 @@ use sha2::{Sha256, Digest};
 use hex;
 use std::collections::HashMap;
 
+// Módulos personalizados
+mod models;
+mod handlers;
+mod services;
+
+// Importar funciones JWT del módulo services
+use services::jwt::{validate_jwt, generate_jwt};
+mod services;
+
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const JWT_SECRET: &[u8] = b"your-secret-key-change-in-production-minimum-32-chars-12345";
+// JWT_SECRET se lee desde variable de entorno en src/services/jwt.rs
 const JWT_EXPIRATION_HOURS: i64 = 24;
 const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 30;
 const DEFAULT_TRM: f64 = 4000.0;
@@ -42,12 +50,8 @@ const TOKEN_VALUE_MULTIPLIER: f64 = 0.05; // 5% base rate
 // ============================================================================
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct Claims {
-    sub: String,
-    email: String,
-    role: String,
-    exp: i64,
-}
+// Claims se importa de services::jwt
+use services::jwt::Claims;
 
 #[derive(Deserialize)]
 struct LoginPayload {
@@ -146,6 +150,82 @@ struct RegisterDeviceTokenPayload {
     token: String,
     platform: String,
     device_info: Option<serde_json::Value>,
+}
+
+// ============================================================================
+// GAMIFICATION STRUCTURES
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum Rank {
+    Novice,
+    RisingStar,
+    Elite,
+    Queen,
+    Goddess,
+}
+
+impl Rank {
+    fn from_xp(xp: i64) -> Self {
+        match xp {
+            0..=20000 => Rank::Novice,
+            20001..=60000 => Rank::RisingStar,
+            60001..=150000 => Rank::Elite,
+            150001..=400000 => Rank::Queen,
+            _ => Rank::Goddess,
+        }
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            Rank::Novice => "Novice",
+            Rank::RisingStar => "Rising Star",
+            Rank::Elite => "Elite",
+            Rank::Queen => "Queen",
+            Rank::Goddess => "Goddess",
+        }
+    }
+
+    fn icon(&self) -> &str {
+        match self {
+            Rank::Novice => "🐣",
+            Rank::RisingStar => "🚀",
+            Rank::Elite => "💎",
+            Rank::Queen => "👑",
+            Rank::Goddess => "🦄",
+        }
+    }
+
+    fn min_xp(&self) -> i64 {
+        match self {
+            Rank::Novice => 0,
+            Rank::RisingStar => 20001,
+            Rank::Elite => 60001,
+            Rank::Queen => 150001,
+            Rank::Goddess => 400001,
+        }
+    }
+
+    fn max_xp(&self) -> i64 {
+        match self {
+            Rank::Novice => 20000,
+            Rank::RisingStar => 60000,
+            Rank::Elite => 150000,
+            Rank::Queen => 400000,
+            Rank::Goddess => i64::MAX,
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct ModelStatsResponse {
+    xp: i64,
+    rank: String,
+    icon: String,
+    next_level_in: i64,
+    progress: f64,
+    today_tokens: i64,
+    today_earnings_cop: f64,
 }
 
 // ============================================================================
@@ -622,13 +702,8 @@ fn require_role(headers: &axum::http::HeaderMap, expected_role: &str) -> Result<
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let claims = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET),
-        &Validation::default(),
-    )
-    .map_err(|_| StatusCode::UNAUTHORIZED)?
-    .claims;
+    let claims = validate_jwt(token)
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     if claims.role != expected_role {
         return Err(StatusCode::FORBIDDEN);
@@ -648,13 +723,8 @@ fn require_roles(headers: &axum::http::HeaderMap, allowed_roles: &[&str]) -> Res
         .strip_prefix("Bearer ")
         .ok_or((StatusCode::UNAUTHORIZED, "Invalid authorization format".to_string()))?;
 
-    let claims = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET),
-        &Validation::default(),
-    )
-    .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid token".to_string()))?
-    .claims;
+    let claims = validate_jwt(token)
+        .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid token".to_string()))?;
 
     if !allowed_roles.contains(&claims.role.as_str()) {
         return Err((StatusCode::FORBIDDEN, "Insufficient permissions".to_string()));
@@ -780,38 +850,7 @@ fn verify_password(password: &str, hash: &str) -> Result<bool, String> {
     }
 }
 
-fn generate_jwt(user_id: &str, email: &str, role: &str) -> Result<String, String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-    
-    let exp = now + (JWT_EXPIRATION_HOURS * 3600);
-    
-    let claims = Claims {
-        sub: user_id.to_string(),
-        email: email.to_string(),
-        role: role.to_string(),
-        exp,
-    };
-    
-    encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(JWT_SECRET),
-    )
-    .map_err(|e| format!("JWT generation error: {}", e))
-}
-
-fn validate_jwt(token: &str) -> Result<Claims, String> {
-    decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET),
-        &Validation::default(),
-    )
-    .map(|data| data.claims)
-    .map_err(|e| format!("JWT validation error: {}", e))
-}
+// NOTE: Use services::jwt for all JWT operations to ensure consistency
 
 /// Generate a secure refresh token (64 random bytes, hex encoded)
 fn generate_refresh_token() -> String {
@@ -970,8 +1009,8 @@ async fn login_handler(
         return Err((StatusCode::UNAUTHORIZED, "Invalid credentials".to_string()));
     }
 
-    let access_token = generate_jwt(&user_id.to_string(), &email, &role)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    let access_token = services::jwt::generate_jwt(user_id, &email, &role, None)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     // Generate refresh token
     let refresh_token = generate_refresh_token();
@@ -1604,6 +1643,115 @@ async fn get_model_home(
     Ok((StatusCode::OK, Json(stats)))
 }
 
+// 🎮 GAMIFICATION: Get Model Stats (Rank, XP, Progress)
+async fn get_model_stats(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, "model").map_err(|s| (s, "Unauthorized".to_string()))?;
+
+    // Parse user id
+    let user_uuid = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+
+    // 1. Calculate total XP (sum of points_ledger)
+    let total_xp_f64: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(amount), 0)::float8 FROM points_ledger WHERE user_id = $1"
+    )
+    .bind(user_uuid)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to calculate XP: {}", e)))?;
+    let total_xp: i64 = total_xp_f64.floor() as i64;
+
+    // 2. Determine current rank
+    let current_rank = Rank::from_xp(total_xp);
+    
+    // 3. Calculate next rank XP requirement
+    let next_rank_in = current_rank.max_xp() - total_xp + 1;
+    
+    // 4. Calculate progress percentage (0.0 to 1.0)
+    let progress = {
+        let range = current_rank.max_xp() - current_rank.min_xp();
+        let progress_in_range = total_xp - current_rank.min_xp();
+        if range > 0 {
+            (progress_in_range as f64 / range as f64).min(1.0).max(0.0)
+        } else {
+            1.0
+        }
+    };
+
+    // 5. Get today's earnings
+    let now = Utc::now();
+    let today_start = now.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc();
+
+    let today_tokens_f64: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(amount), 0)::float8 FROM points_ledger WHERE user_id = $1 AND created_at >= $2"
+    )
+    .bind(user_uuid)
+    .bind(today_start)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to get today's tokens: {}", e)))?;
+    let today_tokens: i64 = today_tokens_f64.floor() as i64;
+
+    // 6. Get today's earnings in COP
+    let trm = current_trm(&pool).await;
+    let today_earnings_cop = today_tokens as f64 * TOKEN_VALUE_MULTIPLIER * (trm - TRM_ADJUSTMENT);
+
+    let response = ModelStatsResponse {
+        xp: total_xp,
+        rank: current_rank.name().to_string(),
+        icon: current_rank.icon().to_string(),
+        next_level_in: next_rank_in.max(0),
+        progress,
+        today_tokens,
+        today_earnings_cop,
+    };
+
+    Ok((StatusCode::OK, Json(response)))
+}
+
+#[derive(Serialize)]
+struct PenaltyItem {
+    id: String,
+    reason: String,
+    xp_deduction: i32,
+    created_at: String,
+}
+
+// 📕 MODEL: Recent penalties (last 3)
+async fn get_recent_penalties(
+    State(pool): State<PgPool>,
+    headers: axum::http::HeaderMap,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let claims = require_role(&headers, "model").map_err(|s| (s, "Unauthorized".to_string()))?;
+
+    let user_uuid = Uuid::parse_str(&claims.sub)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid user ID".to_string()))?;
+
+    let rows = sqlx::query(
+        r#"SELECT id, reason, xp_deduction, created_at
+           FROM penalties
+           WHERE user_id = $1
+           ORDER BY created_at DESC
+           LIMIT 3"#
+    )
+    .bind(user_uuid)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch penalties: {}", e)))?;
+
+    let items: Vec<PenaltyItem> = rows.into_iter().map(|row| PenaltyItem {
+        id: row.get::<Uuid, _>("id").to_string(),
+        reason: row.get::<String, _>("reason"),
+        xp_deduction: row.get::<i32, _>("xp_deduction"),
+        created_at: row.get::<chrono::DateTime<Utc>, _>("created_at").to_rfc3339(),
+    }).collect();
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "penalties": items }))))
+}
+
 async fn sign_contract_handler(
     State(pool): State<PgPool>,
     headers: axum::http::HeaderMap,
@@ -1840,16 +1988,11 @@ async fn get_financial_history(
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let claims = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET),
-        &Validation::default(),
-    )
-    .map_err(|e| {
-        tracing::warn!("❌ Invalid token: {}", e);
-        StatusCode::UNAUTHORIZED
-    })?
-    .claims;
+    let claims = validate_jwt(token)
+        .map_err(|e| {
+            tracing::warn!("❌ Invalid token: {}", e);
+            StatusCode::UNAUTHORIZED
+        })?;
 
     // Verificar rol admin
     if claims.role != "admin" {
@@ -1897,8 +2040,8 @@ async fn refresh_token_handler(
         .ok_or((StatusCode::UNAUTHORIZED, "Invalid or expired refresh token".to_string()))?;
     
     // Generate new access token
-    let new_access_token = generate_jwt(&user_id.to_string(), &email, &role)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    let new_access_token = services::jwt::generate_jwt(user_id, &email, &role, None)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     // Generate new refresh token (token rotation)
     let new_refresh_token = generate_refresh_token();
@@ -2538,14 +2681,18 @@ async fn main() {
         .expect("Failed to create pool");
 
     tracing::info!("🔄 Running migrations...");
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+    // Temporarily skip migration check - table already exists
+    // sqlx::migrate!("./migrations")
+    //     .run(&pool)
+    //     .await
+    //     .expect("Failed to run migrations");
 
     let app = Router::new()
         .route("/", get(root))
         .route("/health", get(health))
+        .route("/api/auth/login", post(handlers::auth::login))
+        .route("/api/admin/production", post(handlers::admin::register_production))
+        .route("/api/admin/penalize", post(handlers::admin::penalize_model))
         .route("/setup_admin", post(setup_admin))
         .route("/setup_modelo", post(setup_modelo))
         .route("/login", post(login_handler))
@@ -2559,9 +2706,23 @@ async fn main() {
         .route("/api/payroll/calculate", post(calculate_payroll_handler))
         // 👩‍💻 Model module
         .route("/api/model/home", get(get_model_home))
+        .route("/api/model/stats", get(get_model_stats))
+        .route("/api/model/penalties/recent", get(get_recent_penalties))
         .route("/api/model/sign-contract", post(sign_contract_handler))
         .route("/api/model/social", post(create_social_link))
-        // 📊 Operations (Moderator)
+        // 📸 KYC Verification (placeholder - will implement separately)
+        // .route("/api/model/upload-kyc", post(handlers::kyc::upload_kyc))
+        // .route("/api/model/kyc-status", get(handlers::kyc::get_kyc_status))
+        // � Attendance Tracking
+        .route("/api/model/check-in", post(handlers::attendance::check_in))
+        .route("/api/model/check-out", post(handlers::attendance::check_out))
+        .route("/api/model/attendance-status", get(handlers::attendance::get_attendance_status))
+        .route("/api/admin/active-shifts", get(handlers::attendance::get_active_shifts))
+        .route("/api/market/products", get(handlers::market::get_products))
+        .route("/api/market/buy/:user_id", post(handlers::market::buy_product))
+        .route("/api/admin/pending-orders", get(handlers::market::get_pending_orders))
+        .route("/api/admin/mark-delivered", post(handlers::market::mark_delivered))
+        // �📊 Operations (Moderator)
         .route("/api/mod/groups", get(get_moderator_groups))
         .route("/api/mod/production", post(register_production_handler))
         // 📊 Financial Analytics
