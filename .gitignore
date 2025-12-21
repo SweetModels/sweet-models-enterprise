@@ -168,3 +168,8 @@ test_financial_planning.ps1
 verify_password.py
 create_model_tables.sql
 create_operations_tables.sql
+sweet_models_enterprise/
+
+*.apk
+*.aab
+mobile_app/build_outputs/
