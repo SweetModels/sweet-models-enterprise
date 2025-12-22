@@ -5,9 +5,10 @@
 # compatibilidad garantizada.
 
 # ============================================================================
-# STAGE 1: Construcción (Build) - Rust 1.83 + Debian Bookworm
+# STAGE 1: Construcción (Build) - Rust Nightly + Debian Bookworm
 # ============================================================================
-FROM rust:1.83-bookworm as builder
+# Usando nightly para soportar edition2024 (requerido por home v0.5.12)
+FROM rustlang/rust:nightly-bookworm as builder
 
 WORKDIR /app
 
