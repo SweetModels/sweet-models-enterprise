@@ -1,26 +1,24 @@
 use tracing::{debug, error, info};
 use uuid::Uuid;
 use aws_sdk_s3::Client as S3Client;
-use aws_sdk_s3::types::ByteStream;
+use aws_sdk_s3::primitives::ByteStream;
 
-/// Buckets soportados (configurados por variables de entorno)
+/// Tipos de bucket soportados
 #[derive(Clone, Copy, Debug)]
-pub enum StorageBucket {
-    Public,
-    Kyc,
-    Evidence,
-    Backup,
+pub enum BucketType {
+    Public,   // BUCKET_PUBLIC
+    Kyc,      // BUCKET_KYC
+    Evidence, // BUCKET_EVIDENCE
+    Backup,   // BUCKET_BACKUP
 }
 
-impl StorageBucket {
-    /// Devuelve el nombre del bucket según el tipo y variables de entorno
-    pub fn resolve_name(self) -> String {
-        match self {
-            StorageBucket::Public => std::env::var("BUCKET_PUBLIC").unwrap_or_else(|_| "sme-public".to_string()),
-            StorageBucket::Kyc => std::env::var("BUCKET_KYC").unwrap_or_else(|_| "sme-kyc".to_string()),
-            StorageBucket::Evidence => std::env::var("BUCKET_EVIDENCE").unwrap_or_else(|_| "sme-evidence".to_string()),
-            StorageBucket::Backup => std::env::var("BUCKET_BACKUP").unwrap_or_else(|_| "sme-backup".to_string()),
-        }
+/// Obtiene el nombre del bucket según el tipo usando variables de entorno
+pub fn get_bucket_name(bucket: BucketType) -> String {
+    match bucket {
+        BucketType::Public => std::env::var("BUCKET_PUBLIC").unwrap_or_else(|_| "sme-public".to_string()),
+        BucketType::Kyc => std::env::var("BUCKET_KYC").unwrap_or_else(|_| "sme-kyc".to_string()),
+        BucketType::Evidence => std::env::var("BUCKET_EVIDENCE").unwrap_or_else(|_| "sme-evidence".to_string()),
+        BucketType::Backup => std::env::var("BUCKET_BACKUP").unwrap_or_else(|_| "sme-backup".to_string()),
     }
 }
 
@@ -36,12 +34,12 @@ impl StorageService {
     /// Subir archivo al bucket indicado. Retorna URL pública o del objeto.
     pub async fn upload_file(
         &self,
-        bucket: StorageBucket,
+        bucket: BucketType,
         key: &str,
         bytes: Vec<u8>,
         content_type: Option<&str>,
     ) -> Result<String, String> {
-        let bucket_name = bucket.resolve_name();
+        let bucket_name = get_bucket_name(bucket);
         debug!("📤 Uploading to bucket={}, key={}", bucket_name, key);
 
         let body = ByteStream::from(bytes.into());
@@ -63,8 +61,8 @@ impl StorageService {
     }
 
     /// Borrar archivo del bucket correspondiente
-    pub async fn delete_file(&self, bucket: StorageBucket, key: &str) -> Result<(), String> {
-        let bucket_name = bucket.resolve_name();
+    pub async fn delete_file(&self, bucket: BucketType, key: &str) -> Result<(), String> {
+        let bucket_name = get_bucket_name(bucket);
         debug!("🗑️ Deleting from bucket={}, key={}", bucket_name, key);
         self.s3.delete_object()
             .bucket(bucket_name)

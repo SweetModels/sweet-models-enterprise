@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::services::{
     jwt::{validate_jwt, JwtError},
-    storage::S3Storage,
+    storage::{self, BucketType},
 };
 
 #[derive(Debug, Deserialize)]
@@ -36,7 +36,6 @@ pub struct KycUploadResponse {
 /// - field "document_type": tipo de documento (cedula, pasaporte, licencia)
 pub async fn upload_kyc(
     State(state): State<AppState>,
-    State(s3_storage): State<S3Storage>,
     headers: axum::http::HeaderMap,
     mut multipart: axum::extract::Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
@@ -207,11 +206,11 @@ pub async fn upload_kyc(
     let extension = detect_image_extension(&file_bytes).unwrap_or("jpg".to_string());
 
     // Generar nombre único en S3
-    let s3_filename = S3Storage::generate_kyc_filename(user_id, &extension);
+    let s3_filename = storage::StorageService::generate_kyc_filename(user_id, &extension);
 
-    // Subir a S3
-    let document_url = match s3_storage
-        .upload_file(file_bytes, &s3_filename)
+    // Subir a S3 usando el cliente del estado
+    let document_url = match storage::StorageService::new(state.s3.clone())
+        .upload_file(BucketType::Kyc, &s3_filename, file_bytes.clone(), Some("application/octet-stream"))
         .await
     {
         Ok(url) => {
