@@ -1,0 +1,907 @@
+warning: unused manifest key: profile.dev.default-run
+warning: unused import: `multipart::MultipartError`
+ --> src\handlers\kyc.rs:2:15
+  |
+2 |     extract::{multipart::MultipartError, State},
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `error`
+ --> src\services\storage.rs:1:22
+  |
+1 | use tracing::{debug, error, info};
+  |                      ^^^^^
+
+warning: unused variable: `claims`
+   --> src\handlers\attendance.rs:441:9
+    |
+441 |     let claims = match validate_jwt(token) {
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_claims`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserResponse` is never constructed
+  --> src\models\user.rs:77:12
+   |
+77 | pub struct UserResponse {
+   |            ^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `CreateUser` is never constructed
+   --> src\models\user.rs:101:12
+    |
+101 | pub struct CreateUser {
+    |            ^^^^^^^^^^
+
+warning: function `verify_token` is never used
+   --> src\handlers\auth.rs:190:14
+    |
+190 | pub async fn verify_token(
+    |              ^^^^^^^^^^^^
+
+warning: struct `AdminProductionRequest` is never constructed
+ --> src\handlers\admin.rs:9:12
+  |
+9 | pub struct AdminProductionRequest {
+  |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `AdminProductionResponse` is never constructed
+  --> src\handlers\admin.rs:16:12
+   |
+16 | pub struct AdminProductionResponse {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `register_production` is never used
+  --> src\handlers\admin.rs:21:14
+   |
+21 | pub async fn register_production(
+   |              ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `AdminPenaltyRequest` is never constructed
+   --> src\handlers\admin.rs:111:12
+    |
+111 | pub struct AdminPenaltyRequest {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `AdminPenaltyResponse` is never constructed
+   --> src\handlers\admin.rs:118:12
+    |
+118 | pub struct AdminPenaltyResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `penalize_model` is never used
+   --> src\handlers\admin.rs:125:14
+    |
+125 | pub async fn penalize_model(
+    |              ^^^^^^^^^^^^^^
+
+warning: struct `KycUploadRequest` is never constructed
+  --> src\handlers\kyc.rs:19:12
+   |
+19 | pub struct KycUploadRequest {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `KycUploadResponse` is never constructed
+  --> src\handlers\kyc.rs:24:12
+   |
+24 | pub struct KycUploadResponse {
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: function `upload_kyc` is never used
+  --> src\handlers\kyc.rs:36:14
+   |
+36 | pub async fn upload_kyc(
+   |              ^^^^^^^^^^
+
+warning: function `detect_image_extension` is never used
+   --> src\handlers\kyc.rs:287:4
+    |
+287 | fn detect_image_extension(file_bytes: &[u8]) -> Option<String> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_kyc_status` is never used
+   --> src\handlers\kyc.rs:303:14
+    |
+303 | pub async fn get_kyc_status(
+    |              ^^^^^^^^^^^^^^
+
+warning: struct `CheckInRequest` is never constructed
+  --> src\handlers\attendance.rs:16:12
+   |
+16 | pub struct CheckInRequest {
+   |            ^^^^^^^^^^^^^^
+
+warning: struct `CheckOutRequest` is never constructed
+  --> src\handlers\attendance.rs:22:12
+   |
+22 | pub struct CheckOutRequest {
+   |            ^^^^^^^^^^^^^^^
+
+warning: struct `CheckInResponse` is never constructed
+  --> src\handlers\attendance.rs:28:12
+   |
+28 | pub struct CheckInResponse {
+   |            ^^^^^^^^^^^^^^^
+
+warning: struct `CheckOutResponse` is never constructed
+  --> src\handlers\attendance.rs:34:12
+   |
+34 | pub struct CheckOutResponse {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `AttendanceStatus` is never constructed
+  --> src\handlers\attendance.rs:42:12
+   |
+42 | pub struct AttendanceStatus {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `ActiveShift` is never constructed
+  --> src\handlers\attendance.rs:49:12
+   |
+49 | pub struct ActiveShift {
+   |            ^^^^^^^^^^^
+
+warning: function `check_in` is never used
+  --> src\handlers\attendance.rs:59:14
+   |
+59 | pub async fn check_in(
+   |              ^^^^^^^^
+
+warning: function `check_out` is never used
+   --> src\handlers\attendance.rs:182:14
+    |
+182 | pub async fn check_out(
+    |              ^^^^^^^^^
+
+warning: function `get_attendance_status` is never used
+   --> src\handlers\attendance.rs:326:14
+    |
+326 | pub async fn get_attendance_status(
+    |              ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_active_shifts` is never used
+   --> src\handlers\attendance.rs:417:14
+    |
+417 | pub async fn get_active_shifts(
+    |              ^^^^^^^^^^^^^^^^^
+
+warning: struct `Product` is never constructed
+  --> src\handlers\market.rs:15:12
+   |
+15 | pub struct Product {
+   |            ^^^^^^^
+
+warning: struct `Order` is never constructed
+  --> src\handlers\market.rs:25:12
+   |
+25 | pub struct Order {
+   |            ^^^^^
+
+warning: struct `BuyRequest` is never constructed
+  --> src\handlers\market.rs:35:12
+   |
+35 | pub struct BuyRequest {
+   |            ^^^^^^^^^^
+
+warning: struct `BuyResponse` is never constructed
+  --> src\handlers\market.rs:40:12
+   |
+40 | pub struct BuyResponse {
+   |            ^^^^^^^^^^^
+
+warning: function `get_products` is never used
+  --> src\handlers\market.rs:47:14
+   |
+47 | pub async fn get_products(
+   |              ^^^^^^^^^^^^
+
+warning: function `buy_product` is never used
+  --> src\handlers\market.rs:73:14
+   |
+73 | pub async fn buy_product(
+   |              ^^^^^^^^^^^
+
+warning: struct `PendingOrder` is never constructed
+   --> src\handlers\market.rs:213:12
+    |
+213 | pub struct PendingOrder {
+    |            ^^^^^^^^^^^^
+
+warning: function `get_pending_orders` is never used
+   --> src\handlers\market.rs:227:14
+    |
+227 | pub async fn get_pending_orders(
+    |              ^^^^^^^^^^^^^^^^^^
+
+warning: struct `MarkDeliveredRequest` is never constructed
+   --> src\handlers\market.rs:265:12
+    |
+265 | pub struct MarkDeliveredRequest {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mark_delivered` is never used
+   --> src\handlers\market.rs:271:14
+    |
+271 | pub async fn mark_delivered(
+    |              ^^^^^^^^^^^^^^
+
+warning: variants `TokenValidationFailed`, `TokenExpired`, and `InvalidToken` are never constructed
+  --> src\services\jwt.rs:46:5
+   |
+44 | pub enum JwtError {
+   |          -------- variants in this enum
+45 |     TokenCreationFailed(String),
+46 |     TokenValidationFailed(String),
+   |     ^^^^^^^^^^^^^^^^^^^^^
+47 |     TokenExpired,
+   |     ^^^^^^^^^^^^
+48 |     InvalidToken,
+   |     ^^^^^^^^^^^^
+   |
+   = note: `JwtError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: function `validate_jwt` is never used
+   --> src\services\jwt.rs:132:8
+    |
+132 | pub fn validate_jwt(token: &str) -> Result<Claims, JwtError> {
+    |        ^^^^^^^^^^^^
+
+warning: function `extract_user_id` is never used
+   --> src\services\jwt.rs:155:8
+    |
+155 | pub fn extract_user_id(token: &str) -> Option<String> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: variant `HashingFailed` is never constructed
+ --> src\services\password.rs:9:5
+  |
+8 | pub enum PasswordError {
+  |          ------------- variant in this enum
+9 |     HashingFailed(String),
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `PasswordError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: function `hash_password` is never used
+  --> src\services\password.rs:39:8
+   |
+39 | pub fn hash_password(password: &str) -> Result<String, PasswordError> {
+   |        ^^^^^^^^^^^^^
+
+warning: struct `S3Storage` is never constructed
+ --> src\services\storage.rs:7:12
+  |
+7 | pub struct S3Storage {
+  |            ^^^^^^^^^
+
+warning: associated items `new`, `upload_file`, `generate_kyc_filename`, and `delete_file` are never used
+  --> src\services\storage.rs:13:18
+   |
+11 | impl S3Storage {
+   | -------------- associated items in this implementation
+12 |     /// Crear una nueva instancia de S3Storage
+13 |     pub async fn new() -> Result<Self, String> {
+   |                  ^^^
+...
+23 |     pub async fn upload_file(
+   |                  ^^^^^^^^^^^
+...
+38 |     pub fn generate_kyc_filename(user_id: Uuid, extension: &str) -> String {
+   |            ^^^^^^^^^^^^^^^^^^^^^
+...
+44 |     pub async fn delete_file(&self, file_name: &str) -> Result<(), String> {
+   |                  ^^^^^^^^^^^
+
+    Checking backend_api v0.1.0 (C:\Users\Sweet\OneDrive\Desktop\Sweet Models Enterprise\backend_api)
+warning: `backend_api` (bin "main_auth") generated 44 warnings (run `cargo fix --bin "main_auth"` to apply 2 suggestions)
+warning: unused import: `PgPool`
+ --> src\main.rs:9:37
+  |
+9 | use sqlx::{postgres::PgPoolOptions, PgPool, Row};
+  |                                     ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::net::SocketAddr`
+  --> src\main.rs:12:5
+   |
+12 | use std::net::SocketAddr;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tokio::net::TcpListener`
+  --> src\main.rs:13:5
+   |
+13 | use tokio::net::TcpListener;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `rand_core::OsRng`
+  --> src\main.rs:17:41
+   |
+17 | use argon2::password_hash::{SaltString, rand_core::OsRng};
+   |                                         ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+  --> src\main.rs:19:17
+   |
+19 | use std::time::{SystemTime, UNIX_EPOCH};
+   |                 ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `multipart::MultipartError`
+ --> src\handlers\kyc.rs:2:15
+  |
+2 |     extract::{multipart::MultipartError, State},
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `generate_jwt`
+  --> src\main.rs:36:35
+   |
+36 | use services::jwt::{validate_jwt, generate_jwt};
+   |                                   ^^^^^^^^^^^^
+
+warning: unused variable: `user_email`
+    --> src\main.rs:2411:5
+     |
+2411 |     user_email: &str,
+     |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_user_email`
+
+warning: unused variable: `amount`
+    --> src\main.rs:2412:5
+     |
+2412 |     amount: f64,
+     |     ^^^^^^
+     |
+help: if this is intentional, prefix it with an underscore
+     |
+2412 |     _amount: f64,
+     |     +
+help: you might have meant to pattern match on the similarly named constant `TOKEN_VALUE_MULTIPLIER`
+     |
+2412 -     amount: f64,
+2412 +     TOKEN_VALUE_MULTIPLIER: f64,
+     |
+
+warning: unused variable: `method`
+    --> src\main.rs:2413:5
+     |
+2413 |     method: &str,
+     |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_method`
+
+warning: unused variable: `transaction_ref`
+    --> src\main.rs:2414:5
+     |
+2414 |     transaction_ref: &Option<String>,
+     |     ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transaction_ref`
+
+error[E0308]: mismatched types
+    --> src\main.rs:2701:32
+     |
+2701 |         .route("/setup_admin", post(setup_admin))
+     |          -----                 ^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2702:33
+     |
+2702 |         .route("/setup_modelo", post(setup_modelo))
+     |          -----                  ^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2703:26
+     |
+2703 |         .route("/login", post(login_handler))
+     |          -----           ^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2704:29
+     |
+2704 |         .route("/register", post(register_handler))
+     |          -----              ^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2705:35
+     |
+2705 |         .route("/register_model", post(register_model_handler))
+     |          -----                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2706:30
+     |
+2706 |         .route("/dashboard", get(get_dashboard))
+     |          -----               ^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2708:30
+     |
+2708 |         .route("/admin/trm", post(update_trm_handler))
+     |          -----               ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2709:30
+     |
+2709 |         .route("/admin/trm", get(get_trm_handler))
+     |          -----               ^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2710:34
+     |
+2710 |         .route("/admin/cameras", get(get_cameras_handler))
+     |          -----                   ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2711:42
+     |
+2711 |         .route("/api/payroll/calculate", post(calculate_payroll_handler))
+     |          -----                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2713:35
+     |
+2713 |         .route("/api/model/home", get(get_model_home))
+     |          -----                    ^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2714:36
+     |
+2714 |         .route("/api/model/stats", get(get_model_stats))
+     |          -----                     ^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2715:47
+     |
+2715 |         .route("/api/model/penalties/recent", get(get_recent_penalties))
+     |          -----                                ^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2716:44
+     |
+2716 |         .route("/api/model/sign-contract", post(sign_contract_handler))
+     |          -----                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2717:37
+     |
+2717 |         .route("/api/model/social", post(create_social_link))
+     |          -----                      ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2731:35
+     |
+2731 |         .route("/api/mod/groups", get(get_moderator_groups))
+     |          -----                    ^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2732:39
+     |
+2732 |         .route("/api/mod/production", post(register_production_handler))
+     |          -----                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2734:48
+     |
+2734 |         .route("/api/admin/financial-history", get(get_financial_history))
+     |          -----                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2736:34
+     |
+2736 |         .route("/auth/send-otp", post(send_otp_handler))
+     |          -----                   ^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2737:36
+     |
+2737 |         .route("/auth/verify-otp", post(verify_otp_handler))
+     |          -----                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2739:31
+     |
+2739 |         .route("/upload/kyc", post(upload_kyc_handler))
+     |          -----                ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2741:33
+     |
+2741 |         .route("/auth/refresh", post(refresh_token_handler))
+     |          -----                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2742:32
+     |
+2742 |         .route("/auth/logout", post(logout_handler))
+     |          -----                 ^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2744:38
+     |
+2744 |         .route("/api/notifications", get(get_notifications))
+     |          -----                       ^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2745:48
+     |
+2745 |         .route("/api/notifications/mark-read", post(mark_notifications_read))
+     |          -----                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2746:54
+     |
+2746 |         .route("/api/notifications/register-device", post(register_device_token))
+     |          -----                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2747:49
+     |
+2747 |         .route("/api/admin/notifications/send", post(send_notification))
+     |          -----                                  ^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2749:40
+     |
+2749 |         .route("/api/admin/dashboard", get(get_admin_dashboard))
+     |          -----                         ^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2750:37
+     |
+2750 |         .route("/api/admin/export", get(export_data))
+     |          -----                      ^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2752:41
+     |
+2752 |             .route("/api/admin/payout", post(process_payout))
+     |              -----                      ^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |              |
+     |              arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2753:51
+     |
+2753 |             .route("/api/admin/payouts/:user_id", get(get_payout_history_handler))
+     |              -----                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |              |
+     |              arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2754:56
+     |
+2754 |             .route("/api/admin/user-balance/:user_id", get(get_user_balance_handler))
+     |              -----                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MethodRouter<Pool<Postgres>>`, found `MethodRouter<AppState>`
+     |              |
+     |              arguments to this method are incorrect
+     |
+     = note: expected struct `MethodRouter<Pool<Postgres>>`
+                found struct `MethodRouter<AppState>`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:164:12
+     |
+ 164 |     pub fn route(self, path: &str, method_router: MethodRouter<S>) -> Self {
+     |            ^^^^^
+
+error[E0308]: mismatched types
+    --> src\main.rs:2756:21
+     |
+2756 |         .with_state(state.clone());
+     |          ---------- ^^^^^^^^^^^^^ expected `Pool<Postgres>`, found `AppState`
+     |          |
+     |          arguments to this method are incorrect
+     |
+     = note: expected struct `Pool<Postgres>`
+                found struct `AppState`
+note: method defined here
+    --> C:\Users\Sweet\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\axum-0.7.9\src\routing\mod.rs:370:12
+     |
+ 370 |     pub fn with_state<S2>(self, state: S) -> Router<S2> {
+     |            ^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0308`.
+warning: `backend_api` (bin "backend_api") generated 13 warnings (2 duplicates)
+error: could not compile `backend_api` (bin "backend_api") due to 33 previous errors; 13 warnings emitted

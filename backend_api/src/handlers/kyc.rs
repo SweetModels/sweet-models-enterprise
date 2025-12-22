@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
 use tracing::{error, info, warn};
+use super::AppState;
 use uuid::Uuid;
 
 use crate::services::{
@@ -34,7 +35,7 @@ pub struct KycUploadResponse {
 /// - field "file": archivo de imagen
 /// - field "document_type": tipo de documento (cedula, pasaporte, licencia)
 pub async fn upload_kyc(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     State(s3_storage): State<S3Storage>,
     headers: axum::http::HeaderMap,
     mut multipart: axum::extract::Multipart,
@@ -242,7 +243,7 @@ pub async fn upload_kyc(
     .bind(&document_type)
     .bind(now)
     .bind(user_id)
-    .execute(&pool)
+    .execute(&state.db)
     .await;
 
     match query_result {
@@ -301,7 +302,7 @@ fn detect_image_extension(file_bytes: &[u8]) -> Option<String> {
 /// GET /api/model/kyc-status
 /// Obtener estado de verificación KYC
 pub async fn get_kyc_status(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let auth_header = headers
@@ -360,7 +361,7 @@ pub async fn get_kyc_status(
         "#,
     )
     .bind(user_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| {
         error!("Database error: {}", e);
@@ -380,3 +381,7 @@ pub async fn get_kyc_status(
         "status": kyc_status.kyc_status,
     })))
 }
+
+
+
+

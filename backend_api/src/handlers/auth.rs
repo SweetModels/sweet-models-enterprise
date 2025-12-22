@@ -6,6 +6,7 @@ use axum::{
 use serde_json::json;
 use sqlx::PgPool;
 use tracing::{error, info, warn};
+use super::AppState;
 
 use crate::models::user::{LoginRequest, LoginResponse, User};
 use crate::services::{jwt::generate_jwt, password::verify_password};
@@ -43,7 +44,7 @@ use crate::services::{jwt::generate_jwt, password::verify_password};
 /// - 401 Unauthorized: Credenciales inválidas o usuario inactivo
 /// - 500 Internal Server Error: Error en la base de datos
 pub async fn login(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, (StatusCode, Json<serde_json::Value>)> {
     // Validar que los campos no estén vacíos
@@ -73,7 +74,7 @@ pub async fn login(
         "#,
     )
     .bind(&payload.email)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     {
         Ok(Some(user)) => user,
@@ -209,3 +210,7 @@ pub async fn verify_token(
         )),
     }
 }
+
+
+
+

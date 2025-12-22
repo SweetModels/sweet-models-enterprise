@@ -20,11 +20,17 @@ use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use std::net::SocketAddr;
+use sqlx::mysql::MySqlPoolOptions;
+use aws_config;
+use aws_sdk_s3::Client as S3Client;
+use deadpool_redis::{Config as RedisConfig, Runtime as RedisRuntime};
+use mongodb::Client as MongoClient;
 
 // Declarar módulos
 mod models;
 mod handlers;
 mod services;
+mod state;
 
 // Importar los handlers
 use handlers::auth;
@@ -61,6 +67,46 @@ async fn main() {
 
     tracing::info!("✅ Database connected successfully");
 
+    // Conectar a MySQL (respaldo)
+    let mysql_url = std::env::var("MYSQL_URL")
+        .unwrap_or_else(|_| "mysql://sme_user:sme_password@localhost:3306/sme_db".to_string());
+    let mysql_pool = MySqlPoolOptions::new()
+        .max_connections(10)
+        .connect(&mysql_url)
+        .await
+        .expect("Failed to connect to MySQL");
+    tracing::info!("✅ MySQL connected successfully");
+
+    // Conectar a Redis
+    let redis_url = std::env::var("REDIS_URL")
+        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_cfg = RedisConfig::from_url(redis_url);
+    let redis_pool = redis_cfg
+        .create_pool(Some(RedisRuntime::Tokio1))
+        .expect("Failed to create Redis pool");
+    tracing::info!("✅ Redis connected successfully");
+
+    // Conectar a MongoDB
+    let mongodb_url = std::env::var("MONGODB_URL")
+        .unwrap_or_else(|_| "mongodb://127.0.0.1:27017".to_string());
+    let mongo_client = MongoClient::with_uri_str(&mongodb_url)
+        .await
+        .expect("Failed to connect to MongoDB");
+    tracing::info!("✅ MongoDB connected successfully");
+
+    // Cliente S3
+    let aws_conf = aws_config::load_from_env().await;
+    let s3_client = S3Client::new(&aws_conf);
+
+    // Construir AppState compartido
+    let app_state = state::AppState {
+        db: pool.clone(),
+        mongo: mongo_client.clone(),
+        redis: redis_pool.clone(),
+        mysql: mysql_pool.clone(),
+        s3: s3_client.clone(),
+    };
+
     // Crear el router de Axum
     let app = Router::new()
         // Rutas de autenticación
@@ -69,8 +115,8 @@ async fn main() {
         // Ruta de health check
         .route("/health", get(health_check))
         
-        // Compartir el pool de conexiones con todos los handlers
-        .with_state(pool)
+        // Compartir AppState con todos los handlers
+        .with_state(app_state)
         
         // Configurar CORS
         .layer(CorsLayer::permissive());

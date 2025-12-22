@@ -9,8 +9,10 @@ Write-Host "🧪 Testing Sweet Models Enterprise - Login Endpoint" -ForegroundCo
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# URL del servidor
-$baseUrl = "http://localhost:3000"
+# URL del servidor (se puede sobreescribir con env BACKEND_URL o RAILWAY_URL)
+$baseUrl = $env:BACKEND_URL
+if ([string]::IsNullOrWhiteSpace($baseUrl)) { $baseUrl = $env:RAILWAY_URL }
+if ([string]::IsNullOrWhiteSpace($baseUrl)) { $baseUrl = "http://localhost:3000" }
 
 # Función para hacer request POST
 function Test-Login {
@@ -65,8 +67,8 @@ try {
     Write-Host ""
 }
 catch {
-    Write-Host "❌ Error: El servidor no está corriendo en $baseUrl" -ForegroundColor Red
-    Write-Host "   Ejecuta primero: cargo run --bin main_auth" -ForegroundColor Yellow
+    Write-Host "❌ Error: El servidor no respondió en $baseUrl" -ForegroundColor Red
+    Write-Host "   Consejo: define BACKEND_URL o RAILWAY_URL para tu instancia en Railway (ej: https://tu-app.railway.app)" -ForegroundColor Yellow
     exit 1
 }
 

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
 use tracing::{error, info, warn};
+use super::AppState;
 use uuid::Uuid;
 
 use crate::services::jwt::{validate_jwt, JwtError};
@@ -57,7 +58,7 @@ pub struct ActiveShift {
 /// POST /api/model/check-in
 /// Marcar entrada del modelo
 pub async fn check_in(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<CheckInRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
@@ -117,7 +118,7 @@ pub async fn check_in(
         "SELECT COUNT(*) FROM attendance_logs WHERE user_id = $1 AND status = 'OPEN'"
     )
     .bind(user_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| {
         error!("Database error: {}", e);
@@ -154,7 +155,7 @@ pub async fn check_in(
     .bind(user_id)
     .bind(now)
     .bind(&ip_addr)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| {
         error!("Failed to insert attendance log: {}", e);
@@ -180,7 +181,7 @@ pub async fn check_in(
 /// POST /api/model/check-out
 /// Marcar salida del modelo
 pub async fn check_out(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<CheckOutRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
@@ -246,7 +247,7 @@ pub async fn check_out(
         "#,
     )
     .bind(user_id)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| {
         error!("Database error: {}", e);
@@ -290,7 +291,7 @@ pub async fn check_out(
     .bind(now)
     .bind(&ip_addr)
     .bind(session_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| {
         error!("Failed to update attendance log: {}", e);
@@ -324,7 +325,7 @@ pub async fn check_out(
 /// GET /api/model/attendance-status
 /// Obtener estado actual de asistencia
 pub async fn get_attendance_status(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let auth_header = headers
@@ -373,7 +374,7 @@ pub async fn get_attendance_status(
         "SELECT check_in::TEXT FROM attendance_logs WHERE user_id = $1 AND status = 'OPEN' LIMIT 1"
     )
     .bind(user_id)
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|e| {
         error!("Database error: {}", e);
@@ -415,7 +416,7 @@ pub async fn get_attendance_status(
 /// GET /api/admin/active-shifts
 /// Obtener lista de modelos actualmente trabajando
 pub async fn get_active_shifts(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let auth_header = headers
@@ -475,7 +476,7 @@ pub async fn get_active_shifts(
         ORDER BY al.check_in DESC
         "#,
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| {
         error!("Database error: {}", e);
@@ -495,3 +496,7 @@ pub async fn get_active_shifts(
     })))
 }
  
+
+
+
+

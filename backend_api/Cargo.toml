@@ -15,7 +15,7 @@ hyper = { version = "1.0", features = ["full"] }
 http-body-util = "0.1"
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "macros"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "mysql", "uuid", "chrono", "macros"] }
 mongodb = "2.8"
 
 # Serialization
@@ -67,6 +67,10 @@ printpdf = "0.7"
 
 # Futures
 futures-util = "0.3"
+
+# AWS SDK for S3
+aws-config = "1.1"
+aws-sdk-s3 = "1.15"
 
 # Binary targets
 [[bin]]

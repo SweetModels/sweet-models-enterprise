@@ -6,7 +6,8 @@ use axum::{
     http::StatusCode,
 };
 use serde::{Serialize, Deserialize};
-use sqlx::{postgres::PgPoolOptions, PgPool, Row};
+use sqlx::{postgres::PgPoolOptions, Row};
+use sqlx::mysql::MySqlPoolOptions;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use std::net::SocketAddr;
@@ -23,10 +24,13 @@ use std::path::Path;
 use sha2::{Sha256, Digest};
 use hex;
 use std::collections::HashMap;
-use crate::state::AppState;
+use state::AppState;
 use deadpool_redis::{Config, Runtime};
+use aws_sdk_s3::Client as S3Client;
+use aws_config;
 
 // Módulos personalizados
+mod state;
 mod models;
 mod handlers;
 mod services;
@@ -733,11 +737,11 @@ fn require_roles(headers: &axum::http::HeaderMap, allowed_roles: &[&str]) -> Res
     Ok(claims)
 }
 
-async fn current_trm(pool: &PgPool) -> f64 {
+async fn current_trm(state: &AppState) -> f64 {
     let trm_result: Option<(String,)> = sqlx::query_as(
         "SELECT config_value FROM financial_config WHERE config_key = 'trm_daily'"
     )
-    .fetch_optional(pool)
+    .fetch_optional(&state.db)
     .await
     .ok()
     .flatten();
@@ -748,13 +752,13 @@ async fn current_trm(pool: &PgPool) -> f64 {
 }
 
 /// Calcula balance financiero del usuario (ganado - pagado)
-async fn calculate_user_balance(pool: &PgPool, user_uuid: Uuid) -> Result<BalanceInfo, (StatusCode, String)> {
+async fn calculate_user_balance(state: &AppState, user_uuid: Uuid) -> Result<BalanceInfo, (StatusCode, String)> {
     // Ganancias históricas (asumimos columna tokens_usd en production_logs)
     let total_earned: f64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(tokens_usd), 0)::float8 FROM production_logs WHERE model_id = $1"
     )
     .bind(user_uuid)
-    .fetch_one(pool)
+    .fetch_one(&state.db)
     .await
     .unwrap_or(0.0);
 
@@ -763,7 +767,7 @@ async fn calculate_user_balance(pool: &PgPool, user_uuid: Uuid) -> Result<Balanc
         "SELECT COALESCE(SUM(amount), 0)::float8 FROM payouts WHERE user_id = $1"
     )
     .bind(user_uuid)
-    .fetch_one(pool)
+    .fetch_one(&state.db)
     .await
     .unwrap_or(0.0);
 
@@ -777,7 +781,7 @@ async fn calculate_user_balance(pool: &PgPool, user_uuid: Uuid) -> Result<Balanc
 }
 
 async fn sum_points_since(
-    pool: &PgPool,
+    state: &AppState,
     user_id: &str,
     since: Option<chrono::DateTime<chrono::Utc>>,
 ) -> Result<f64, (StatusCode, String)> {
@@ -790,13 +794,13 @@ async fn sum_points_since(
         )
         .bind(user_uuid)
         .bind(since_date)
-        .fetch_one(pool).await
+        .fetch_one(&state.db).await
     } else {
         sqlx::query_scalar::<_, f64>(
             "SELECT COALESCE(SUM(amount), 0) FROM points_ledger WHERE user_id = $1"
         )
         .bind(user_uuid)
-        .fetch_one(pool).await
+        .fetch_one(&state.db).await
     }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)))?;
     
@@ -804,7 +808,7 @@ async fn sum_points_since(
 }
 
 async fn award_points(
-    pool: &PgPool,
+    state: &AppState,
     user_id: &str,
     amount: f64,
     reason: &str,
@@ -818,7 +822,7 @@ async fn award_points(
     .bind(user_uuid)
     .bind(amount)
     .bind(reason)
-    .execute(pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to award points: {}", e)))?;
     
@@ -1039,7 +1043,7 @@ async fn login_handler(
             refresh_token,
             token_type: "Bearer".to_string(),
             expires_in: JWT_EXPIRATION_HOURS * 3600,
-            role,
+            role: role.to_string(),
             user_id: user_id.to_string(),
         }),
     ))
@@ -1620,12 +1624,12 @@ async fn get_model_home(
     let month_start_date = NaiveDate::from_ymd_opt(now.year(), now.month(), 1).unwrap();
     let month_start = month_start_date.and_hms_opt(0, 0, 0).unwrap().and_utc();
 
-    let trm = current_trm(&state.db).await;
+    let trm = current_trm(&state).await;
 
-    let today_points = sum_points_since(&state.db, &claims.sub, Some(today_start)).await?;
-    let week_points = sum_points_since(&state.db, &claims.sub, Some(week_start)).await?;
-    let month_points = sum_points_since(&state.db, &claims.sub, Some(month_start)).await?;
-    let active_points = sum_points_since(&state.db, &claims.sub, None).await?;
+    let today_points = sum_points_since(&state, &claims.sub, Some(today_start)).await?;
+    let week_points = sum_points_since(&state, &claims.sub, Some(week_start)).await?;
+    let month_points = sum_points_since(&state, &claims.sub, Some(month_start)).await?;
+    let active_points = sum_points_since(&state, &claims.sub, None).await?;
 
     let token_to_cop = |points: f64| points * TOKEN_VALUE_MULTIPLIER * (trm - TRM_ADJUSTMENT);
 
@@ -1692,7 +1696,7 @@ async fn get_model_stats(
     let today_tokens: i64 = today_tokens_f64.floor() as i64;
 
     // 6. Get today's earnings in COP
-    let trm = current_trm(&state.db).await;
+    let trm = current_trm(&state).await;
     let today_earnings_cop = today_tokens as f64 * TOKEN_VALUE_MULTIPLIER * (trm - TRM_ADJUSTMENT);
 
     let response = ModelStatsResponse {
@@ -2489,7 +2493,7 @@ async fn process_payout(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid admin ID".to_string()))?;
 
     // Obtener balance actual (ganado - pagado)
-    let balance = calculate_user_balance(&state.db, user_uuid).await?;
+    let balance = calculate_user_balance(&state, user_uuid).await?;
 
     if payload.amount > balance.pending_balance {
         return Err((StatusCode::BAD_REQUEST, format!(
@@ -2519,7 +2523,7 @@ async fn process_payout(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert payout: {}", e)))?;
 
     // Nuevo saldo (recalcular por consistencia)
-    let updated_balance = calculate_user_balance(&state.db, user_uuid).await?;
+    let updated_balance = calculate_user_balance(&state, user_uuid).await?;
 
     tracing::info!(
         "✅ Payout recorded: payout_id={}, new_pending=${:.2}",
@@ -2620,7 +2624,7 @@ async fn get_user_balance_handler(
 
     let email = email.ok_or((StatusCode::NOT_FOUND, "User not found".to_string()))?;
 
-    let balance = calculate_user_balance(&state.db, user_uuid).await?;
+    let balance = calculate_user_balance(&state, user_uuid).await?;
 
     let last_payout: Option<String> = sqlx::query_scalar(
         "SELECT created_at::text FROM payouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
@@ -2666,6 +2670,14 @@ async fn main() {
         .await
         .expect("Failed to create pool");
 
+    // Initialize MySQL connection (backup DB)
+    let mysql_url = std::env::var("MYSQL_URL").expect("MYSQL_URL not set");
+    let mysql_pool = MySqlPoolOptions::new()
+        .max_connections(10)
+        .connect(&mysql_url)
+        .await
+        .expect("Failed to create MySQL pool");
+
     // Initialize Redis connection
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
     let redis_cfg = Config::from_url(redis_url);
@@ -2681,11 +2693,17 @@ async fn main() {
     println!("✅ Connected to MongoDB");
     tracing::info!("✅ Connected to MongoDB");
 
-    // Create AppState with all databases
+    // Initialize AWS S3 client
+    let aws_conf = aws_config::load_from_env().await;
+    let s3_client = S3Client::new(&aws_conf);
+
+    // Create AppState with all databases and S3
     let state = AppState {
         db: pool.clone(),
         mongo: mongo_client.clone(),
         redis: redis_pool,
+        mysql: mysql_pool.clone(),
+        s3: s3_client.clone(),
     };
 
     tracing::info!("🔄 Running migrations...");

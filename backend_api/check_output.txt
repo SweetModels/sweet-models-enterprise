@@ -1,0 +1,155 @@
+warning: unused manifest key: profile.dev.default-run
+    Checking backend_api v0.1.0 (C:\Users\Sweet\OneDrive\Desktop\Sweet Models Enterprise\backend_api)
+error[E0432]: unresolved import `crate::state`
+ --> src\handlers\mod.rs:8:16
+  |
+8 | pub use crate::state::AppState;
+  |                ^^^^^
+  |                |
+  |                unresolved import
+  |                help: a similar path exists: `backend_api::state`
+
+error[E0425]: cannot find value `pool` in this scope
+  --> src\handlers\market.rs:96:18
+   |
+96 |     let mut tx = pool.begin().await.map_err(|e| {
+   |                  ^^^^ not found in this scope
+
+warning: unused import: `sqlx::PgPool`
+ --> src\handlers\auth.rs:7:5
+  |
+7 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `PgPool`
+ --> src\handlers\admin.rs:4:12
+  |
+4 | use sqlx::{PgPool};
+  |            ^^^^^^
+
+warning: unused import: `multipart::MultipartError`
+ --> src\handlers\kyc.rs:2:15
+  |
+2 |     extract::{multipart::MultipartError, State},
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `sqlx::PgPool`
+ --> src\handlers\kyc.rs:9:5
+  |
+9 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `sqlx::PgPool`
+ --> src\handlers\attendance.rs:9:5
+  |
+9 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `sqlx::PgPool`
+ --> src\handlers\market.rs:8:5
+  |
+8 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `error`
+ --> src\services\storage.rs:1:22
+  |
+1 | use tracing::{debug, error, info};
+  |                      ^^^^^
+
+warning: unused import: `PgPool`
+ --> src\main.rs:9:37
+  |
+9 | use sqlx::{postgres::PgPoolOptions, PgPool, Row};
+  |                                     ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::net::SocketAddr`
+  --> src\main.rs:12:5
+   |
+12 | use std::net::SocketAddr;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tokio::net::TcpListener`
+  --> src\main.rs:13:5
+   |
+13 | use tokio::net::TcpListener;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `rand_core::OsRng`
+  --> src\main.rs:17:41
+   |
+17 | use argon2::password_hash::{SaltString, rand_core::OsRng};
+   |                                         ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+  --> src\main.rs:19:17
+   |
+19 | use std::time::{SystemTime, UNIX_EPOCH};
+   |                 ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `sqlx::PgPool`
+ --> src\handlers\auth.rs:7:5
+  |
+7 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `generate_jwt`
+  --> src\main.rs:36:35
+   |
+36 | use services::jwt::{validate_jwt, generate_jwt};
+   |                                   ^^^^^^^^^^^^
+
+warning: unused variable: `claims`
+   --> src\handlers\attendance.rs:442:9
+    |
+442 |     let claims = match validate_jwt(token) {
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_claims`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0425, E0432.
+For more information about an error, try `rustc --explain E0425`.
+warning: `backend_api` (bin "main_auth") generated 7 warnings
+error: could not compile `backend_api` (bin "main_auth") due to 2 previous errors; 7 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused variable: `user_email`
+    --> src\main.rs:2411:5
+     |
+2411 |     user_email: &str,
+     |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_user_email`
+
+warning: unused variable: `amount`
+    --> src\main.rs:2412:5
+     |
+2412 |     amount: f64,
+     |     ^^^^^^
+     |
+help: if this is intentional, prefix it with an underscore
+     |
+2412 |     _amount: f64,
+     |     +
+help: you might have meant to pattern match on the similarly named constant `TOKEN_VALUE_MULTIPLIER`
+     |
+2412 -     amount: f64,
+2412 +     TOKEN_VALUE_MULTIPLIER: f64,
+     |
+
+warning: unused variable: `method`
+    --> src\main.rs:2413:5
+     |
+2413 |     method: &str,
+     |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_method`
+
+warning: unused variable: `transaction_ref`
+    --> src\main.rs:2414:5
+     |
+2414 |     transaction_ref: &Option<String>,
+     |     ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transaction_ref`
+
+For more information about this error, try `rustc --explain E0425`.
+warning: `backend_api` (bin "backend_api") generated 18 warnings (6 duplicates)
+error: could not compile `backend_api` (bin "backend_api") due to 1 previous error; 18 warnings emitted

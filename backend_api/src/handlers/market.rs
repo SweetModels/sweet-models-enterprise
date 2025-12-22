@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 use tracing::{error, info};
+use super::AppState;
 use serde_json::json;
 use chrono::Utc;
 
@@ -45,7 +46,7 @@ pub struct BuyResponse {
 /// GET /api/market/products
 /// Obtener lista de productos activos con stock disponible
 pub async fn get_products(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let products: Vec<Product> = sqlx::query_as(
         "SELECT id::TEXT, name, price_cop, stock, image_url, is_active 
@@ -53,7 +54,7 @@ pub async fn get_products(
          WHERE is_active = TRUE AND stock > 0 
          ORDER BY name ASC"
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| {
         error!("Error fetching products: {}", e);
@@ -71,7 +72,7 @@ pub async fn get_products(
 /// POST /api/market/buy
 /// Comprar un producto (transacción ACID con descuento automático)
 pub async fn buy_product(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     axum::extract::Path(user_id): axum::extract::Path<String>,
     Json(payload): Json<BuyRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
@@ -92,7 +93,7 @@ pub async fn buy_product(
     info!("🛍️  Purchase attempt: user={}, product={}", user_id, payload.product_id);
 
     // Iniciar transacción
-    let mut tx = pool.begin().await.map_err(|e| {
+    let mut tx = state.db.begin().await.map_err(|e| {
         error!("Transaction error: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -225,7 +226,7 @@ pub struct PendingOrder {
 /// GET /api/admin/pending-orders
 /// Obtener órdenes pendientes de entrega
 pub async fn get_pending_orders(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let orders: Vec<PendingOrder> = sqlx::query_as(
         r#"
@@ -246,7 +247,7 @@ pub async fn get_pending_orders(
         ORDER BY o.created_at DESC
         "#
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.db)
     .await
     .map_err(|e| {
         error!("Error fetching pending orders: {}", e);
@@ -269,7 +270,7 @@ pub struct MarkDeliveredRequest {
 /// POST /api/admin/mark-delivered
 /// Marcar una orden como entregada
 pub async fn mark_delivered(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<MarkDeliveredRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let order_uuid = Uuid::parse_str(&payload.order_id).map_err(|_| {
@@ -283,7 +284,7 @@ pub async fn mark_delivered(
         "UPDATE orders SET status = 'DELIVERED', updated_at = CURRENT_TIMESTAMP WHERE id = $1"
     )
     .bind(order_uuid)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| {
         error!("Error marking delivered: {}", e);
@@ -307,4 +308,8 @@ pub async fn mark_delivered(
         Json(json!({"message": "Orden entregada exitosamente"}))
     ))
 }
+
+
+
+
 

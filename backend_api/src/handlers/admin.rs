@@ -2,6 +2,7 @@ use axum::{extract::State, http::HeaderMap, response::IntoResponse, Json};
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool};
+use super::AppState;
 
 use crate::services::jwt::{validate_jwt, JwtError};
 
@@ -19,7 +20,7 @@ pub struct AdminProductionResponse {
 }
 
 pub async fn register_production(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<AdminProductionRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -56,7 +57,7 @@ pub async fn register_production(
         "SELECT id FROM users WHERE email = $1 LIMIT 1"
     )
     .bind(&payload.model_email)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::NOT_FOUND, format!("Model not found: {}", e)))?;
 
@@ -74,7 +75,7 @@ pub async fn register_production(
     .bind(today)
     .bind(&payload.platform)
     .bind(payload.tokens)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to upsert production: {}", e)))?;
 
@@ -85,7 +86,7 @@ pub async fn register_production(
     .bind(model_id)
     .bind(payload.tokens as f64)
     .bind(format!("admin_production:{}", payload.platform))
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to award points: {}", e)))?;
 
@@ -94,7 +95,7 @@ pub async fn register_production(
         "SELECT COALESCE(SUM(amount), 0)::float8 FROM points_ledger WHERE user_id = $1"
     )
     .bind(model_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to compute total: {}", e)))?;
 
@@ -123,7 +124,7 @@ pub struct AdminPenaltyResponse {
 /// POST /api/admin/penalize
 /// Apply a penalty to a model: records penalty and deducts XP immediately
 pub async fn penalize_model(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<AdminPenaltyRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -173,7 +174,7 @@ pub async fn penalize_model(
         "SELECT id FROM users WHERE email = $1 LIMIT 1"
     )
     .bind(&payload.model_email)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .map_err(|e| (StatusCode::NOT_FOUND, format!("Model not found: {}", e)))?;
 
@@ -189,7 +190,7 @@ pub async fn penalize_model(
     .bind(-(payload.xp_penalty as i32))
     .bind(0.0_f64)
     .bind(admin_id)
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to record penalty: {}", e)))?;
 
@@ -200,7 +201,7 @@ pub async fn penalize_model(
     .bind(model_id)
     .bind(-(payload.xp_penalty as f64))
     .bind(format!("penalty:{}", payload.reason))
-    .execute(&pool)
+    .execute(&state.db)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to deduct points: {}", e)))?;
 
@@ -209,7 +210,7 @@ pub async fn penalize_model(
         "SELECT COALESCE(SUM(amount), 0)::float8 FROM points_ledger WHERE user_id = $1"
     )
     .bind(model_id)
-    .fetch_one(&pool)
+    .fetch_one(&state.db)
     .await
     .unwrap_or(0.0);
 
@@ -221,3 +222,7 @@ pub async fn penalize_model(
         }),
     ))
 }
+
+
+
+
