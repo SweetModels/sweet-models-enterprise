@@ -15,8 +15,8 @@ WORKDIR /app
 # Copiar TODO el proyecto (monorepo completo)
 COPY . .
 
-# Compilar en modo release (optimizado para producción)
-RUN cargo build --release
+# MAGIA: Buscar Cargo.toml, encontrar su directorio, y compilar desde ahí
+RUN cd $(dirname $(find . -name Cargo.toml -maxdepth 2 | head -n 1)) && cargo build --release
 
 # ============================================================================
 # STAGE 2: Ejecución (Runtime) - Debian Bookworm Slim
@@ -31,9 +31,9 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar el binario compilado de la etapa builder
+# Buscar y copiar el binario compilado, sin importar en qué subcarpeta esté
 # El binario se llama 'backend_api' según Cargo.toml [[bin]] name="backend_api"
-COPY --from=builder /app/backend_api/target/release/backend_api /app/backend_api
+COPY --from=builder /app/*/target/release/backend_api /app/backend_api
 
 # Permisos de ejecución
 RUN chmod +x /app/backend_api
