@@ -121,8 +121,9 @@ async fn main() {
         // Configurar CORS
         .layer(CorsLayer::permissive());
 
-    // Configurar dirección y puerto
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    // Configurar dirección y puerto (usa PORT o 3000 por defecto) y bind a 0.0.0.0
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
     tracing::info!("🌐 Server listening on http://{}", addr);
     tracing::info!("");
     tracing::info!("📋 Available endpoints:");
@@ -131,7 +132,7 @@ async fn main() {
     tracing::info!("");
 
     // Iniciar el servidor
-    let listener = tokio::net::TcpListener::bind(addr)
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .expect("Failed to bind to address");
 

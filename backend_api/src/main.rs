@@ -2772,11 +2772,13 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(state.clone());
 
-    // Bind explicitly to 0.0.0.0:8080 for Railway healthcheck
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    // Bind to 0.0.0.0 and honor PORT for Railway healthcheck
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
-    println!("🚀 Server listening on 0.0.0.0:8080");
-    tracing::info!("🚀 Server listening on 0.0.0.0:8080");
+    println!("🚀 Server listening on {}", addr);
+    tracing::info!("🚀 Server listening on {}", addr);
     tracing::info!("✨ Features: Refresh Tokens, Notifications, Admin Dashboard, Data Export, Payouts/Liquidation, Doble TRM, Biometric Auth, Camera Monitoring, OTP Verification, KYC Upload");
 
     axum::serve(listener, app)
