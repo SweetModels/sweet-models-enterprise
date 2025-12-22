@@ -42,7 +42,7 @@ impl StorageService {
         let bucket_name = get_bucket_name(bucket);
         debug!("📤 Uploading to bucket={}, key={}", bucket_name, key);
 
-        let body = ByteStream::from(bytes.into());
+        let body = ByteStream::from(bytes);
         let mut req = self.s3.put_object()
             .bucket(bucket_name.clone())
             .key(key.to_string())
