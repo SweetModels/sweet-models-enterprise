@@ -181,3 +181,4 @@ sweet_models_enterprise/.git_nested_backup/
 
 # Specific sensitive env in vendored folder
 sweet_models_enterprise/backup_protocol.env
+sweet-models-web/node_modules/
